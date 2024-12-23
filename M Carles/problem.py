@@ -2,57 +2,73 @@
 
 
 import numpy as np
-from pymoo.core.problem import ElementwiseProblem
+from pymoo.core.problem import ElementwiseProblem     # ElementwiseProblem: indica que cada solución se evalúa individualmente
 import cmath
+
+
+
+
 
 # Define the problem with mixed variable types
 class MyProblem(ElementwiseProblem):
     def __init__(self):
         super().__init__(
-            n_var=13,
-            n_obj=2,
-            n_constr=14,  # change if needed
-            xl=np.array([0, 0, 0, 0, 0, 1, 2, 200e6, 0.0, 0.0, 0.0, 0.0, 0.0]),
-            xu=np.array([1, 1, 1, 1, 1, 2, 3, 800e6, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0]),
-            type_var=np.array([int, int, int, int, int, int, int,
+            n_var=13,                                                                             # n_var: Número de variables de decisión 
+            n_obj=2,                                                                              # n_obj: Número de funciones objetivo (2: costos de inversión y técnicos)
+            n_constr=14,  # change if needed                                                      # n_constr: Número de restricciones
+            xl=np.array([0, 0, 0, 0, 0, 1, 2, 200e6, 0.0, 0.0, 0.0, 0.0, 0.0]),                   # xl: Límites inferiores  para cada variable de decisión
+            xu=np.array([1, 1, 1, 1, 1, 2, 3, 800e6, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0]),    # xu: Límites superiores para cada variable de decisión
+            type_var=np.array([int, int, int, int, int, int, int,                                 # type_var: Especifica los tipos de las variables (enteras o continuas)
                                float, float, float, float, float, float]) 
         )
 
+
+
+
+
+
+    # EVALUATE
     def _evaluate(self, x, out, *args, **kwargs):
-        
 
-        react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, vol, n_cables, S_rtr, react1, react2, react3, react4, react5 = x 
+        # VARIABLES DE DECISIÓN: Estas representan las decisiones que el algoritmo puede ajustar
+        react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, vol, n_cables, S_rtr, react1, react2, react3, react4, react5 = x      
+          # react1_bi a react5_bi: Binarias, indican si hay un reactor instalado en una posición
+          # vol: Nivel de voltaje de la red (1 para 132 kV, 2 para 220 kV)
+          # n_cables: Número de cables en paralelo
+          # S_rtr: Potencia nominal del transformador
+          # react1 a react5: Tamaños de los reactores
 
-        react1 /= 1000
-        react2 /= 1000
-        react3 /= 1000
-        react4 /= 1000
+        react1 /= 1000                                                                                                             
+        react2 /= 1000                                                                                                             
+        react3 /= 1000                                                                                                             
+        react4 /= 1000                                                                                                             
         react5 /= 1000
 
-        def build_grid_data(Sbase, f, l, p_owf, q_owf, vol, S_rtr, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val, react4_val, react5_val):
-            """
-            Build the admittance matrix of the grid and define the general data.
-            :param Sbase: Base power of the grid
-            :param f: Frequency of the grid
-            :param l: Length of the cables
-            :param p_owf: Active power of the offshore wind farm
-            :param q_owf: Reactive power of the offshore wind farm
-            :param vol: Voltage level of the grid
-            :param S_rtr: Rated power of the transformer
-            :param n_cables: Number of cables
-            :param react1_bi: Binary value for the first compensator
-            :param react2_bi: Binary value for the second compensator
-            :param react3_bi: Binary value for the third compensator
-            :param react4_bi: Binary value for the fourth compensator
-            :param react5_bi: Binary value for the fifth compensator
-            :param react1_val: Value of the first compensator
-            :param react2_val: Value of the second compensator
-            :param react3_val: Value of the third compensator
-            :param react4_val: Value of the fourth compensator
-            :param react5_val: Value of the fifth compensator
-            :return Y_bus, p_owf, q_owf, n_cables, u_i, I_rated, S_rtr, Y_l1, Y_l2, Y_l3, Y_l4, Y_l5, A, B, C, Y_trserie, Y_piserie
-            """
 
+        # Evaluate.1: 
+         # CONSTRUCCIÓN DEL MODELO DE RED (build_grid_data)
+         # Build the admittance matrix (Ybus) of the grid and define the general data
+           # Sbase: Base power of the grid
+           # f: Frequency of the grid
+           # l: Length of the cables
+           # p_owf: Active power of the offshore wind farm
+           # q_owf: Reactive power of the offshore wind farm
+           # vol: Voltage level of the grid
+           # S_rtr: Rated power of the transformer
+           # n_cables: Number of cables
+           # Binary value for the first compensator
+           # react2_bi: Binary value for the second compensator
+           # react3_bi: Binary value for the third compensator
+           # react4_bi: Binary value for the fourth compensator
+           # react5_bi: Binary value for the fifth compensator
+           # react1_val: Value of the first compensator
+           # react2_val: Value of the second compensator
+           # react3_val: Value of the third compensator
+           # react4_val: Value of the fourth compensator
+           # react5_val: Value of the fifth compensator
+        def build_grid_data(Sbase, f, l, p_owf, q_owf, vol, S_rtr, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val, react4_val, react5_val):
+          # return Y_bus, p_owf, q_owf, n_cables, u_i, I_rated, S_rtr, Y_l1, Y_l2, Y_l3, Y_l4, Y_l5, A, B, C, Y_trserie, Y_piserie    
+           
             if vol == 1:
                 u_i = 132e3  # V
                 R = 0.0067  # ohm/km
@@ -77,7 +93,7 @@ class MyProblem(ElementwiseProblem):
             V_ref = u_i
 
             # 1.2 Trafo
-            # Trafo parameters
+             # Trafo parameters
             U_rtr = u_i  # V
             P_Cu = 60e3  # W
             P_Fe = 40e3  # W
@@ -152,33 +168,35 @@ class MyProblem(ElementwiseProblem):
                         [0, 0, 0, 0, -Y_g, Y_g]])
         
             return Y_bus, p_owf, q_owf, n_cables, u_i, I_rated, S_rtr, Y_l1, Y_l2, Y_l3, Y_l4, Y_l5, A, B, C, Y_trserie, Y_piserie
+        
+        # FIN Evaluate.1 
 
-        def run_pf(p_owf: float=0.0,
-               q_owf: float=0.0,
-               Y_bus: np.ndarray=None,
-               nbus: int=1,
-               V_slack: float=1.0,
-               angle_slack: float=0.0,
-               max_iter: int=20,
-               eps: float=1e-6,
-               y_trserie: float=0.0,
-               y_piserie: float=0.0,
-               S_rtr: float=500e6,
-               n_cables: int=2,
-               vol: int=1):
 
-            """
-            Run the power flow algorithm to find the voltages and angles of the nodes in the grid.
-            :param p_owf: Active power of the offshore wind farm
-            :param q_owf: Reactive power of the offshore wind farm
-            :param Y_bus: Admittance matrix of the grid
-            :param nbus: Number of buses in the grid
-            :param V_slack: Voltage of the slack bus
-            :param angle_slack: Angle of the slack bus
-            :param max_iter: Maximum number of iterations
-            :param eps: Error tolerance
-            :return: [V, V_wslack, angle_wslack, curr, p_wslack, q_wslack, solution_found]
-            """
+
+
+
+        # Evaluate.2:
+         # NEWTON-RAPHSON: Usa el método de Newton-Raphson para calcular:
+           # V_wslack, angle_wslack: Voltajes y ángulos en los nodos
+           # p_wslack, q_wslack: Potencias activa y reactiva en el nodo slack
+           # curr: Corrientes en las líneas
+        def run_pf(
+               p_owf: float=0.0,           # p_owf: Active power of the offshore wind farm
+               q_owf: float=0.0,           # q_owf: Reactive power of the offshore wind farm
+               Y_bus: np.ndarray=None,     # Y_bus: Admittance matrix of the grid
+               nbus: int=1,                # nbus: Number of buses in the grid
+               V_slack: float=1.0,         # V_slack: Voltage of the slack bus
+               angle_slack: float=0.0,     # Angle_slack: Angle of the slack bus
+               max_iter: int=20,           # max_iter: Maximum number of iterations
+               eps: float=1e-6,            # eps: Error tolerance
+               y_trserie: float=0.0,       #
+               y_piserie: float=0.0,       #
+               S_rtr: float=500e6,         #
+               n_cables: int=2,            #
+               vol: int=1
+               ):      
+            # return: [V, V_wslack, angle_wslack, curr, p_wslack, q_wslack, solution_found]
+
     
             V = np.ones(nbus - 1, dtype=float)
             V_wslack = np.empty(nbus, dtype=float)
@@ -321,36 +339,42 @@ class MyProblem(ElementwiseProblem):
 
             return V_wslack, angle_wslack, curr, p_wslack, q_wslack, solution_found
         
-        def compute_costs(p_owf: float=0.0, p_wslack: float=0.0, q_wslack: float=0.0, V: np.ndarray=None,
-                      curr: np.ndarray=None, nbus: int=1, n_cables: int=1, u_i: float=220, I_rated: float=1.0,
-                      S_rtr: float=500, react1_bi: bool=False, react2_bi: bool=False, react3_bi: bool=False,
-                      react4_bi: bool=False, react5_bi: bool=False, Y_l1: float=0.0, Y_l2: float=0.0, Y_l3: float=0.0,
-                      Y_l4: bool=False, Y_l5: bool=False, solution_found: bool=False):
-            """
-            Compute all the costs
-            :param p_owf: Active power of the offshore wind farm
-            :param p_wslack: Active power at each node
-            :param q_wslack: Reactive power at each node
-            :param V: Voltage at each node
-            :param curr: Current at each line
-            :param nbus: Number of buses in the grid
-            :param n_cables: Number of cables
-            :param u_i: Rated voltage of the cables
-            :param I_rated: Rated current of the cables
-            :param S_rtr: Rated power of the transformer
-            :param react1_bi: Binary value for the first compensator
-            :param react2_bi: Binary value for the second compensator
-            :param react3_bi: Binary value for the third compensator
-            :param react4_bi: Binary value for the fourth compensator
-            :param react5_bi: Binary value for the fifth compensator
-            :param Y_l1: Value of the first compensator
-            :param Y_l2: Value of the second compensator
-            :param Y_l3: Value of the third compensator
-            :param Y_l4: Value of the fourth compensator
-            :param Y_l5: Value of the fifth compensator
-            :param solution_found: Boolean value indicating if a solution was found
-            :return: [cost_invest, cost_tech]
-            """
+        # Fin Evaluate.2
+
+
+
+
+
+        # Evaluate.3:
+         # CÁLCULOS DE COSTES
+         # Calcula:
+           # cost_invest: Costo de inversión 
+           # cost_tech: Costo técnico
+           # gs: Restricciones
+        def compute_costs(
+                    p_owf: float=0.0,              # p_owf: Active power of the offshore wind farm   
+                    p_wslack: float=0.0,           # p_wslack: Active power at each node
+                    q_wslack: float=0.0,           # q_wslack: Reactive power at each node
+                    V: np.ndarray=None,            # V: Voltage at each node
+                    curr: np.ndarray=None,         # curr: Current at each line
+                    nbus: int=1,                   # nbus: Number of buses in the grid
+                    n_cables: int=1,               # n_cables: Number of cables
+                    u_i: float=220,                # u_i: Rated voltage of the cables
+                    I_rated: float=1.0,            # I_rated: Rated current of the cables
+                    S_rtr: float=500,              # S_rtr: Rated power of the transformer
+                    react1_bi: bool=False,         # react1_bi: Binary value for the first compensator
+                    react2_bi: bool=False,         # react2_bi: Binary value for the second compensator
+                    react3_bi: bool=False,         # react3_bi: Binary value for the third compensator
+                    react4_bi: bool=False,         # react4_bi: Binary value for the fourth compensator
+                    react5_bi: bool=False,         # react5_bi: Binary value for the fifth compensator
+                    Y_l1: float=0.0,               # Y_l1: Value of the first compensator
+                    Y_l2: float=0.0,               # Y_l2: Value of the second compensator
+                    Y_l3: float=0.0,               # Y_l3: Value of the third compensator
+                    Y_l4: bool=False,              # Y_l4: Value of the fourth compensator
+                    Y_l5: bool=False,              # Y_l5: Value of the fifth compensator
+                    solution_found: bool=False     # solution_found: Boolean value indicating if a solution was found
+                    ):
+                #return: [cost_invest, cost_tech]
 
             """
             if not solution_found:
@@ -364,6 +388,7 @@ class MyProblem(ElementwiseProblem):
 
             else:
             """
+
         #  We compute the AC power losses
             p_lossac = Sbase * (p_owf + p_wslack[5]) * 1e-6  # MW
 
@@ -471,6 +496,9 @@ class MyProblem(ElementwiseProblem):
             cost_tech = c_react + c_losses  # not constraints per se, but we want to minimize these
 
             return cost_invest, cost_tech, gs
+        
+        # Fin Evaluate.3
+
 
 
 
