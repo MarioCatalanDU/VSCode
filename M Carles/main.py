@@ -65,7 +65,7 @@ termination = get_termination("n_gen", 50)    # The algorithm stops after 50 gen
   # problem: Define el problema de optimización que se desea resolver 
   # algorithm: El algoritmo que se usará para resolver el problema (por ejemplo, NSGA-II, NSGA-III)
   # termination: Define los criterios de parada del algoritmo
-  # seed: Establece una semilla para asegurar reproducibilidad. Si se fija un valor, los resultados serán consistentes en cada ejecución
+  # seed: Establece una semilla (valor inicial que se proporciona al generador de números aleatorios para controlar la secuencia de números que se generan) para asegurar reproducibilidad. Si se fija un valor, los resultados serán consistentes en cada ejecución
   # save_history: Si es True, almacena el historial de las generaciones y permite análisis posteriores de las soluciones intermedias
   # verbose: Si es True, imprime información sobre el progreso durante la optimización
 res = minimize(
