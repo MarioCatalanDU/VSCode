@@ -541,7 +541,7 @@ class MyProblem(ElementwiseProblem):
             g5_ov = V[4] - 1.1
             # TODO: do the same for the others
 
-            # Under voltages (Subtensiones)ç
+            # Under voltages (Subtensiones)
              # Verifica que el voltaje no caiga por debajo de 0.9 pu
             g1_uv = 0.9 - V[0]
             g2_uv = 0.9 - V[1]
