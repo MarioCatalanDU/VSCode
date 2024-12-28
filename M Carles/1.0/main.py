@@ -2,7 +2,7 @@
 
 
 import matplotlib.pyplot as plt                                    # matplotlib.pyplot: una de las bibliotecas más populares en Python para crear gráficos y visualizaciones. Cuando se importa como plt, se convierte en una convención ampliamente usada para trabajar con gráficos (pyplot proporciona una interfaz similar a la de MATLAB para crear gráficos de forma sencilla)
-                                                                   # pymoo: Biblioteca utilizada para optimización multiobjetivo.
+# pymoo: Biblioteca utilizada para optimización multiobjetivo.
 from pymoo.algorithms.moo.nsga3 import NSGA3                       # NSGA3: Implementación del algoritmo NSGA-III.
 from pymoo.util.ref_dirs import get_reference_directions           # get_reference_directions: Genera las direcciones de referencia utilizadas por NSGA-III para guiar la búsqueda ( Esto asegura que las soluciones generadas por el algoritmo estén bien distribuidas en el frente de Pareto. Estas direcciones actúan como "puntos guía" para las soluciones optimizadas)
 from pymoo.termination import get_termination                      # get_termination: definir los criterios de finalización de un algoritmo de optimización. Es una herramienta clave para especificar las condiciones bajo las cuales el proceso iterativo del algoritmo debe detenerse

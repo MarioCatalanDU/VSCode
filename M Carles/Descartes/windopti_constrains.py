@@ -62,7 +62,7 @@ class MixedVariableProblem_constraints(ElementwiseProblem):
         # Extracción de variables: Extraer valores específicos de las variables de decisión desde el diccionario X para facilitar su uso en los cálculos posteriores
         react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, vol, n_cables, S_rtr, react1, react2, react3, react4, react5 = \
         X["react1_bi"], X["react2_bi"], X["react3_bi"], X["react4_bi"], X["react5_bi"], X["vol_level"], X["n_cables"], X["S_rtr"],X["react1"], X["react2"], X["react3"], X["react4"], X["react5"]
-        # react1_bi a react5_bi: Binarias, indican si hay un reactor instalado en una posición, si los reactores están activados (1) o desactivados (0)
+          # react1_bi a react5_bi: Binarias, indican si hay un reactor instalado en una posición, si los reactores están activados (1) o desactivados (0)
           # vol: Nivel de voltaje de la red (1 para 132 kV, 2 para 220 kV)
           # n_cables: Número de cables en paralelo
           # S_rtr: Potencia nominal del transformador
