@@ -1,4 +1,4 @@
-import numpy as np#
+import numpy as np
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.problems import get_problem
 #  from pymoo.operators.crossover.pntx import TwoPointCrossover
@@ -10,7 +10,7 @@ from pymoo.visualization.scatter import Scatter
 
 from pymoo.core.mixed import MixedVariableGA
 from pymoo.core.variable import Real, Integer, Choice, Binary
-from Main.windopti import MixedVariableProblem
+from windopti import MixedVariableProblem
 #from windopti_withcstr import MixedVariableProblem2
 #from windopti_fum import MixedVariableProblem3
 #from windopti_constraints import MixedVariableProblem_constraints
