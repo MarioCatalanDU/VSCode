@@ -48,7 +48,7 @@ res = minimize(problem,
 
 
 
-"""
+
 res = minimize(ConstraintsAsPenalty(problem, penalty=100.0),
                algorithm,
                seed=1,
@@ -64,7 +64,7 @@ plt.title("Convergence")
 plt.plot(n_evals, opt, "--")
 plt.yscale("log")
 plt.show()
-"""
+
 
 #Choice of decicision point (we need weights for each objective)
 weights = np.array([0.5, 0.5])
@@ -85,7 +85,7 @@ print("Execution time NSGA: ", execution_time,"s")
 #print(res.X)
 #print(res.CV)
 # print("Best solution found: \nX = %s\nF = %s" % (res.X, res.F))
-"""
+
 X, F = res.opt.get("X", "F")
 hist = res.history
 print("lenHisory =",len(hist))
@@ -96,7 +96,7 @@ plt.title("Convergence")
 plt.plot(n_evals, opt, "--")
 plt.yscale("log")
 plt.show()
-"""
+
 
 plot = Scatter()
 
@@ -162,7 +162,7 @@ plt.title("Set of solutions comparing NSGA and random search")
 
 plt.show()
 
-"""
+
 ff = costac_2
 p_owf = 5
 x_opf = np.array([3, 2, 1, 1, 0, 1, 0, 0.519, 0.953, 0.0, 0.737, 0.0, 509.72e6])

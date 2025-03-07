@@ -1,6 +1,8 @@
-# Este archivo proves_nsga2.py es la versión mejorada de main.py y actúa como el punto de entrada principal para ejecutar la optimización multiobjetivo utilizando el algoritmo NSGA-II
+# Este archivo es la versión mejorada de main.py y actúa como el punto de entrada principal para ejecutar la optimización multiobjetivo utilizando el algoritmo NSGA-II
 
-
+   # Importa windopti.py y costac_2.py para evaluar soluciones en el proceso evolutivo
+   # Usa Pymoo para manejar variables mixtas y evaluar múltiples objetivos
+   # Implementa Búsqueda Aleatoria para comparar con NSGA-II
 
 
 # 1. IMPORTAR HERRAMIENTAS
@@ -45,8 +47,8 @@ problem = MixedVariableProblem()  # Instancia del problema de optimización
 
 # Configuración del algoritmo NSGA-II con variables mixtas
 algorithm = MixedVariableGA(
-    pop_size=150,                                             # Tamaño de la población
-    sampling=MixedVariableSampling(),                         # Método de muestreo para variables mixtas
+    pop_size=150,                                             # Tamaño de la población -> Define cuántas soluciones (individuos) hay en cada generación. Un tamaño grande permite explorar más ampliamente el espacio de soluciones, pero incrementa el costo computacional
+    sampling=MixedVariableSampling(),                         # Método de muestreo para variables mixtas -> genera valores aleatorios para las variables de decisión, asegurando que sean enteros
     survival=RankAndCrowding(crowding_func="pcd")             # Método de selección basado en crowding distance
 )
 
@@ -57,8 +59,8 @@ res = minimize(                                               # minimize: Ejecut
     algorithm,                                                # NSGA II
     termination=('n_gen', 6),                                 # Criterio de parada: 6 generaciones
     seed=1,                                                   # Semilla para reproducibilidad
-    verbose=True,                                             # Mostrar progreso en terminal
-    save_history=True                                         # Guardar el historial de generaciones
+    verbose=True,                                             # Mostrar progreso en terminal -> verbose: Si es True, imprime información sobre el progreso durante la optimización
+    save_history=True                                         # Guardar el historial de generaciones -> Si save_history=True, contiene un registro de todas las generaciones y poblaciones intermedias
 )
 end_time = time.time()                                        # end_time: Guarda el tiempo de finalización.
 execution_time = end_time - start_time                        # calcula la duración
@@ -75,7 +77,7 @@ I = decomp(res.F, weights).argmin()                           # Índice de la me
 # print("Best solution found: \nX = %s\nF = %s\nC = %s" % (   # Muestra la mejor solución encontrada en términos de:
    # res.X,                                                   # X: Variables de decisión óptimas.
    # res.F,                                                   # F: Valores de las funciones objetivo.
-   # res.CV))                                                 # C → Restricciones violadas (si hay restricciones).
+   # res.CV))                                                 # C: Restricciones violadas (si hay restricciones).
 
 print("Best solution found weighted: \nX = %s\nF = %s" % (   # Muestra la mejor solución según los pesos definidos previamente (ASF) 
     res.X[I],                                                # res.X[I]: Variables de decisión de la mejor solución ponderada -> Sale: [react1_bi, react2_bi, ... → Estados de activación de los reactores (True/False)] [vol_level → Nivel de voltaje seleccionado] [n_cables → Número de cables en paralelo] [S_rtr → Potencia nominal del transformador] [react1, react2, ... → Valores de los reactores]
@@ -140,3 +142,34 @@ plt.ylabel("Technical cost [M€]")                                             
 plt.title("Set of solutions comparing NSGA-II and random search")                                                 # Título
 plt.legend()
 plt.show()
+
+
+# GRÁFICA COMPARACIÓN - MÉTODO 1 (NSGA II) VS OPF - MEJORAR GÁFICA!!!!!!!!!!!!!!!!!!!!!!
+ff = costac_2
+p_owf = 5
+x_opf = np.array([3, 2, 1, 1, 0, 1, 0, 0.519, 0.953, 0.0, 0.737, 0.0, 509.72e6])
+x_nosh = np.array([3, 2, 0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 509.72e6])
+vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr = x_opf
+cost_invest_opf, cost_tech_opf, cost_fullopf = ff(vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr, p_owf)
+c_vol, c_curr, c_losses, c_react, cost_tech, c_cab, c_gis, c_tr, c_reac, cost_invest,c_volover, c_volunder, c_ss, average_v = cost_fullopf
+plt.scatter(res.F[:,0], res.F[:,1], facecolor="none", edgecolor="black",label='NSGA-II Pareto Front')
+plt.scatter(cost_invest_opf, cost_tech_opf, color='green',s=100, label='OPF solution')
+plt.scatter(res.F[I,0], res.F[I,1], color='red',s= 80, label='NSGA-II decision point')
+plt.xlabel("Investment cost [M€]")
+plt.ylabel("Technical cost [M€]")
+plt.title("Set of solutions comparing NSGA and OPF")
+plt.legend()
+plt.show()
+
+
+# GRÀFICA DE BARRAS - COSTES
+costs= [c_losses, c_cab, c_gis, c_tr, c_reac, c_ss]
+labels = ['Power losses', 'Cables', 'GIS', 'Transformers', 'Reactive power compensation', 'Substation']
+plt.bar(labels, costs, color='skyblue')
+plt.xlabel('Cost Components')
+plt.ylabel('Cost [M€]')
+plt.title('Breakdown of Full OPF Cost')
+plt.xticks(rotation=45)  # Rotate labels to avoid overlap
+plt.show()
+
+

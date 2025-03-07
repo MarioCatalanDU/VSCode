@@ -1,12 +1,22 @@
+# Es una VERSIÓN SIMPLIFICADA DE  windopti.py, enfocada en FACILITAR el CÁLCULO DE COSTOS  y la visualización de GRÁFICAS.
+
+   # Mantiene muchas de las funciones de windopti.py, pero con ajustes para que pueda ser usada de forma más sencilla en análisis y gráficos.
+
+
+
 import numpy as np
 import pandas as pd
 import cmath
 import random
 from pprint import pprint
 
+
+
+# Función principal que calcula los costos de inversión y operación para una red eléctrica offshore -> Simplificación de windopti para replicarlo graficamente
+
 def costac_2(vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr, p_owf):
 
-
+   # SIMPLIFICACIÓN DE windopti
 
     def build_grid_data(Sbase, f, l, p_owf, q_owf, vol, S_rtr, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val, react4_val, react5_val):
         """
@@ -568,3 +578,4 @@ def costac_2(vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_b
     cost_invest, cost_tech, cost_full = compute_costs(p_owf, p_wslack, q_wslack, V_wslack, curr, nbus, n_cables, u_i, I_rated, S_rtr, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, Y_l1, Y_l2, Y_l3, Y_l4, Y_l5, Y_ref, solution_found) 
 
     return cost_invest, cost_tech, cost_full
+    # Nos devuelve los costos para facilitar la optención de gráficos

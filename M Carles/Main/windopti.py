@@ -1,8 +1,12 @@
 # Este archivo es el núcleo del problema de optimización. Define cómo se calculan los objetivos, las restricciones y cómo se simula la red eléctrica offshore.
+
+# Objetivo: 
+ # Encontrar la mejor configuración de la red optimizando costos y restricciones
+
  # Define:
-   # - Las variables y restricciones del problema     (return Y_bus, p_owf, q_owf, n_cables, u_i, I_rated, S_rtr, Y_l1, Y_l2, Y_l3, Y_l4, Y_l5, A, B, C, Y_trserie, Y_piserie)
-   # - El flujo de potencia mediante Newton-Raphson   (return V_wslack, angle_wslack, curr, p_wslack, q_wslack, solution_found)
-   # - La evaluación de costos y restricciones        (return cost_invest, cost_tech, gs)
+   # - ESTRUCTURA: Las variables y restricciones del problema     (return Y_bus, p_owf, q_owf, n_cables, u_i, I_rated, S_rtr, Y_l1, Y_l2, Y_l3, Y_l4, Y_l5, A, B, C, Y_trserie, Y_piserie)
+   # - Newton-Raphson: para calcular el flujo de potencia         (return V_wslack, angle_wslack, curr, p_wslack, q_wslack, solution_found)
+   # - La evaluación de COSTOS y RESTRICCIONES                    (return cost_invest, cost_tech, gs)
 
 
 
