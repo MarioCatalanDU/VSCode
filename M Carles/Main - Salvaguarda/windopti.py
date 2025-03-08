@@ -1,4 +1,4 @@
-# NÚCLEO DEL PROBLEMA DE OPTIMIZACIÓN. Define cómo se calculan los objetivos, las restricciones y cómo se simula la red eléctrica offshore.
+# Este archivo es el núcleo del problema de optimización. Define cómo se calculan los objetivos, las restricciones y cómo se simula la red eléctrica offshore.
 
 # Objetivo: 
  # Encontrar la mejor configuración de la red optimizando costos y restricciones
@@ -10,24 +10,16 @@
 
 
 
-
-
-# 1. IMPORTAR HERRAMIENTAS
-
+from pymoo.core.problem import ElementwiseProblem                 # ElementwiseProblem: indica que cada solución se evalúa individualmente
+from pymoo.core.variable import Real, Integer, Choice, Binary     # define diferentes tipos de variables para problemas de optimización (mejora respecto a problem)
 import numpy as np                                                # numpy: Librería. Se utiliza para operaciones matemáticas y de álgebra lineal
 import cmath                                                      # cmath: Librería. Biblioteca matemática para números complejos
 import pymoo.gradient.toolbox as anp                              # anp: Importa el módulo toolbox del paquete pymoo.gradient y lo asigna al alias anp. Se utiliza comúnmente en Pymoo como una alternativa al módulo de NumPy, ya que pymoo.gradient.toolbox está diseñado para facilitar el cálculo de gradientes y operaciones relacionadas con optimización
 import time                                                       # time: Proporciona varias funciones relacionadas con la medición y el manejo del tiempo (se utiliza para medir la duración de ciertas operaciones)
 
-from pymoo.core.problem import ElementwiseProblem                 # ElementwiseProblem: indica que cada solución se evalúa individualmente
-from pymoo.core.variable import Real, Integer, Choice, Binary     # define diferentes tipos de variables para problemas de optimización (mejora respecto a problem)
 
 
 
-
-
-
-# 2. OPTIMIZACIÓN
 
 # DEFINE the optimization problem with mixed variable types
 class MixedVariableProblem(ElementwiseProblem):
@@ -35,7 +27,6 @@ class MixedVariableProblem(ElementwiseProblem):
 
 
     # INICIALIZAR PROBLEMA
-
       # Variables de decisión del problema
     def __init__(self, **kwargs):
         # vars: diccionario que define las variables de decisión del problema
@@ -45,7 +36,7 @@ class MixedVariableProblem(ElementwiseProblem):
             "react3_bi": Binary(),                       # ""
             "react4_bi": Binary(),                       # ""
             "react5_bi": Binary(),                       # ""
-            "vol_level": Choice(options=["vol220"]),     # vol_level: Choice(options=["vol132","vol220"]) Escogemos el valor del voltaje
+            "vol_level": Choice(options=["vol220"]),     # "vol_level": Choice(options=["vol132","vol220"]) Escogemos el valor del voltaje
             "n_cables": Integer(bounds=(2, 3)),          # n_cables: Número de cables en paralelo. Solo puede tomar valores enteros entre 2 y 3
             "S_rtr": Real(bounds=(500e6, 1000e6)),       # S_rtr: Potencia nominal del transformador, que puede variar entre 300 MW y 900 MW
             "react1": Real(bounds=(0.0, 1.0)),           # Tamaños de los reactores, definidos como valores continuos entre 0.0 y 1.0
@@ -86,9 +77,9 @@ class MixedVariableProblem(ElementwiseProblem):
 
 
 
+
         # Evaluate.1 
          # CONSTRUCCIÓN DEL MODELO DE RED (build_grid_data)
-         
           # Build the admittance matrix (Ybus) of the grid and define the general data
     
         # Parámetros de entrada:
@@ -103,7 +94,7 @@ class MixedVariableProblem(ElementwiseProblem):
                             vol,           # vol: Voltage level of the grid
                             S_rtr,         # S_rtr: Rated power of the transformer
                             n_cables,      # n_cables: Number of cables 
-                            react1_bi, react2_bi, react3_bi, react4_bi, react5_bi,        # reactX_bi: Binary value for the X compensator (1 - Encendido / 0 - Apagado) 
+                            react1_bi, react2_bi, react3_bi, react4_bi, react5_bi,        # reactX_bi: Binary value for the X compensator  
                             react1_val, react2_val, react3_val, react4_val, react5_val    # reactX_val: Value of the X compensator
                             ):
             # return Y_bus, p_owf, q_owf, n_cables, u_i, I_rated, S_rtr, Y_l1, Y_l2, Y_l3, Y_l4, Y_l5, A, B, C, Y_trserie, Y_piserie    
@@ -448,14 +439,14 @@ class MixedVariableProblem(ElementwiseProblem):
 
             return V_wslack, angle_wslack, curr, p_wslack, q_wslack, solution_found
         
-            # return V_wslack, angle_wslack, curr, p_wslack, q_wslack, solution_found
-        # Fin Evaluate.2
+          # return V_wslack, angle_wslack, curr, p_wslack, q_wslack, solution_found
+    # Fin Evaluate.2
 
         
 
 
 
-        # Evaluate.3:
+         # Evaluate.3:
           # CÁLCULOS DE COSTES
           # Calcula:
             # - cost_invest: Costo de inversión 
@@ -488,7 +479,20 @@ class MixedVariableProblem(ElementwiseProblem):
                     ):
                 #return: [cost_invest, cost_tech]
 
-  
+            """
+            if not solution_found:
+                print("NO SOLUTION !!!")
+                cost_invest = 1e20
+                cost_tech = 1e20
+                cost_tech1 = 1e20 
+                cost_tech2 = 1e20
+                cost_tech3 = 1e20
+                cost_tech4 = 1e20
+
+            else:
+            """
+            
+
 
             # 3.1 COSTOS
                 
@@ -530,7 +534,6 @@ class MixedVariableProblem(ElementwiseProblem):
             p_on = 0.8312              # Penalizaciones adicionales 
             p_mid = 12.44              # Penalizaciones adicionales
             p_off = 1.244              # Penalizaciones adicionales
-
 
             # Cada reactor tiene costos asociados a su tamaño y ubicación
             if react1_bi:

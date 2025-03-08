@@ -1,25 +1,12 @@
-# PUNTO DE ENTRADA PRINCIPAL para ejecutar la OPTIMIZACIÓN MULTIOBJETIVO utilizando el ALGORITMO NSGA II
- # Este archivo es la versión mejorada de main.py 
+# Este archivo es la versión mejorada de main.py y actúa como el punto de entrada principal para ejecutar la optimización multiobjetivo utilizando el algoritmo NSGA-II
 
    # Importa windopti.py y costac_2.py para evaluar soluciones en el proceso evolutivo
    # Usa Pymoo para manejar variables mixtas y evaluar múltiples objetivos
-   # Implementa Búsqueda Aleatoria para comparar con NSGA-II 
-
-
-# GRÁFICAS - Pareto NSGA II - NSGA vs Búsqued Aleatoria / OPF
- # # Gráfics que nos muestran las distintas soluciones mediante optimización - Para validad el uso de NSGA
-
-
-
+   # Implementa Búsqueda Aleatoria para comparar con NSGA-II
 
 
 # 1. IMPORTAR HERRAMIENTAS
 
-# Importación de Nuestras funciones de optimización
-from windopti import MixedVariableProblem
-from costac_2 import costac_2
-
-problem = MixedVariableProblem()                                   # PROBLEM es la llamada a windopti
 
 import numpy as np                                                 # numpy: Librería. Se utiliza para operaciones matemáticas y de álgebra lineal
 import matplotlib.pyplot as plt                                    # matplotlib.pyplot: una de las bibliotecas más populares en Python para crear gráficos y visualizaciones. Cuando se importa como plt, se convierte en una convención ampliamente usada para trabajar con gráficos (pyplot proporciona una interfaz similar a la de MATLAB para crear gráficos de forma sencilla)
@@ -42,6 +29,12 @@ from pymoo.constraints.as_penalty import ConstraintsAsPenalty      # Penalizaci�
 from pymoo.decomposition.asf import ASF                            # Método para descomposición de objetivos (Achievement Scalarizing Function)
 from pymoo.core.evaluator import Evaluator                         # Evaluador de individuos
 from pymoo.core.individual import Individual                       # Representación de un individuo en la población
+
+# Importación de la función de costos y del problema de optimización (Nuestras funciones)
+from windopti import MixedVariableProblem
+from costac_2 import costac_2
+
+problem = MixedVariableProblem()  # Instancia del problema de optimización
 
 
 
@@ -130,45 +123,7 @@ print("Execution time random search: ", execution_time2, "s")                   
 
 
 
-# MÉTODO 3 - OPF - Optimal Power Flow
- # Colocamos una solución óptima
- # Usamos un ENFOQUE DETERMINISTA ( el algoritmo sigue un procedimiento fijo sin depender del azar o de la variabilidad de las soluciones iniciales) para encontrar los valores de los parámetros.
-
-ff = costac_2                            # Función de costo utilizada (creada por nosotros)
-p_owf = 5                                # Potencia de generación del parque eólico en unidades predefinidas
-
-x_opf = np.array([                       # Solución óptima encontrada mediante OPF (con compensación reactiva)
-    3,                                   # vol
-    2,                                   # n_cables
-    1,                                   # react1 - encendido
-    1,                                   # react2 - encendido
-    0,                                   # react3 - apagado
-    1,                                   # react4 - encendido
-    0,                                   # recat5 - apagado
-    0.519,                               # react1 - tamaño
-    0.953,                               # react2 - tamaño
-    0.0,                                 # react3 - tamaño
-    0.737,                               # react4 - tamaño
-    0.0,                                 # react5 - tamaño
-    509.72e6                             # Potencia nominal del transformador
-    ])                           
-
-# Desempaquetado de valores de solución óptima OPF
-vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val, react4_val, react5_val, S_rtr = x_opf 
-# Se calculan los costos de inversión y técnicos para la solución OPF usando costac_2
-cost_invest_opf, cost_tech_opf, cost_fullopf = ff(vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr, p_owf)
-# Se desempaquetan los costos detallados de la solución OPF
-c_vol, c_curr, c_losses, c_react, cost_tech, c_cab, c_gis, c_tr, c_reac, cost_invest,c_volover, c_volunder, c_ss, average_v = cost_fullopf
-
-
-
-
-
-
 # 3 GRÁFICAS
-
-# Gráfics que nos muestran las distintas soluciones mediante optimización - Para validar el uso de NSGA
-
 
 # GRÀFICA PARETO - MÉTODO 1 - NSAG II - MEJORAR GÁFICA!!!!!!!!!!!!!!!!!!!
   # Graficar el frente de Pareto encontrado 
@@ -176,7 +131,6 @@ plot = Scatter()
 plot.add(res.F, facecolor="none", edgecolor="black")
 plot.add(res.F[I], color="red", s=50)                  # Resaltar el mejor punto
 plot.show()
-
 
 
 # GRÁFICA COMPARACIÓN - MÉTODO 1 (NSGA II) VS MÉTODO 2 (Búsqueda Aletoria) - MEJORAR GÁFICA!!!!!!!!!!!!!!!!!!!!!!
@@ -190,9 +144,14 @@ plt.legend()
 plt.show()
 
 
-
 # GRÁFICA COMPARACIÓN - MÉTODO 1 (NSGA II) VS OPF - MEJORAR GÁFICA!!!!!!!!!!!!!!!!!!!!!!
- # Comparación gráfica entre NSGA-II y OPF
+ff = costac_2
+p_owf = 5
+x_opf = np.array([3, 2, 1, 1, 0, 1, 0, 0.519, 0.953, 0.0, 0.737, 0.0, 509.72e6])
+x_nosh = np.array([3, 2, 0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 509.72e6])
+vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr = x_opf
+cost_invest_opf, cost_tech_opf, cost_fullopf = ff(vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr, p_owf)
+c_vol, c_curr, c_losses, c_react, cost_tech, c_cab, c_gis, c_tr, c_reac, cost_invest,c_volover, c_volunder, c_ss, average_v = cost_fullopf
 plt.scatter(res.F[:,0], res.F[:,1], facecolor="none", edgecolor="black",label='NSGA-II Pareto Front')
 plt.scatter(cost_invest_opf, cost_tech_opf, color='green',s=100, label='OPF solution')
 plt.scatter(res.F[I,0], res.F[I,1], color='red',s= 80, label='NSGA-II decision point')
@@ -203,6 +162,14 @@ plt.legend()
 plt.show()
 
 
-
+# GRÀFICA DE BARRAS - COSTES
+costs= [c_losses, c_cab, c_gis, c_tr, c_reac, c_ss]
+labels = ['Power losses', 'Cables', 'GIS', 'Transformers', 'Reactive power compensation', 'Substation']
+plt.bar(labels, costs, color='skyblue')
+plt.xlabel('Cost Components')
+plt.ylabel('Cost [M€]')
+plt.title('Breakdown of Full OPF Cost')
+plt.xticks(rotation=45)  # Rotate labels to avoid overlap
+plt.show()
 
 

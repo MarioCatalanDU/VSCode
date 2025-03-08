@@ -1,25 +1,15 @@
-# DIAGRAMAS DE BARRAS de COSTES - GRÁFICAS Costes para windopti
-
- # COMPARACIÓN costes : Compensación vs No Compensación - Para validar con Costes el uso de NSGA 
- # Usando la solución extraida de NSGA (CON Compensación) graficamos sus costes VS la misma solución pero (SIN Compensación)
 
 
 
-
-
-# 1. IMPORTAR HERRAMIENTAS
 
 import numpy as np                                                          # Importa la biblioteca NumPy para cálculos numéricos
 import matplotlib as mpl                                                    # Biblioteca para configuraciones avanzadas de gráficos
 import matplotlib.pyplot as plt                                             # Biblioteca para graficar
 import time                                                                 # Biblioteca para medir tiempos de ejecución
 
-import seaborn as sns                                                       # Para mejorar gráficas
-import matplotlib.patheffects as path_effects                               # Para mejorar la visibilidad del texto
-
 # Llamada a nuestros programas
 from windopti import MixedVariableProblem                                   # Importa la clase que define el problema de optimización
-from costac_2 import costac_2                                               # Importa la función de costos del sistema
+from costac_2 import costac_2                                              # Importa la función de costos del sistema
 
 # pymoo para trabajar con variables mixtas
 from pymoo.algorithms.moo.nsga2 import NSGA2                                # Importa el algoritmo NSGA-II para optimización multiobjetivo
@@ -39,57 +29,49 @@ from pymoo.core.mixed import MixedVariableSampling                         # Mue
 
 
 
+# Se define el problema de optimización
+problem = MixedVariableProblem()
 
+# Se define la función de costos a usar
+ff = costac_2
+p_owf = 5  # Potencia del parque eólico
 
-# 2. DEFINICIÓN DE VALORES - Extraidos de windopti y costac_2
+# Se define una solución óptima encontrada por OPF
+x_opf = np.array([3, 2, 1, 1, 0, 1, 0, 0.519, 0.953, 0.0, 0.737, 0.0, 509.72e6])
 
-problem = MixedVariableProblem()                                           # Se define el problema de optimización
-ff = costac_2                                                              # Se define la función de costos a usar
-p_owf = 5                                                                  # Potencia del parque eólico
- 
+# Se extraen los valores de la solución óptima (Mmain)
+vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr = x_opf
 
-
-
-
-# 3. SOLUCIÓN NSGA II - CON COMPENSACIÓN
-
-# Aplicamos la solución óptima encontrada por Mmain
-x_opf = np.array([
-    1,                  # react1_bi : variables binarias (0 o 1), que indican si un reactor está activado (1) o desactivado (0)
-    1,                  # react2_bi    
-    0,                  # react3_bi
-    1,                  # react4_bi
-    0,                  # react5_bi
-    3,                  # vol_level
-    2,                  # n_cables: Número de cables en paralelo. Solo puede tomar valores enteros entre 2 y 3
-    581.72e6,           # S_rtr: Potencia nominal del transformador, que puede variar entre 300 MW y 900 MW   
-    0.944,              # react1_val : Tamaños de los reactores, definidos como valores continuos entre 0.0 y 1.0 
-    0.845,              # react2_val
-    0.0,                # react3_val
-    0.892,              # react4_val
-    0.0,                # react5_val
-    ])
-# Se extraen los valores de la solución óptima 
-react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, vol, n_cables,  S_rtr, react1_val, react2_val, react3_val,react4_val, react5_val = x_opf
-# Se calcula el costo de inversión y técnico usando la función de costos 
+# Se calcula el costo de inversión y técnico usando la función de costos (costac)
 cost_invest_opf, cost_tech_opf, cost_fullopf = ff(vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr, p_owf)
-# Se extraen costos específicos del resultado de costos 
+
+# Se extraen costos específicos del resultado de costos (cosatc)
 c_vol, c_curr, c_losses, c_react, cost_tech, c_cab, c_gis, c_tr, c_reac, cost_invest,c_volover, c_volunder, c_ss, average_v = cost_fullopf
+
 # Se organizan los costos para graficarlos
 costs_opf= [c_losses, c_cab, c_gis, c_tr, c_reac, c_ss]
 labels = ['Power losses', 'Cables', 'Switchgears', 'Transformers', 'Reactors', 'Substation']
 
 
-# GRÁFICA 1 - CON COMPENSACIÓN
-  # Se genera un gráfico de barras para visualizar la distribución de costos en la solución óptima
 
+
+
+
+
+
+
+# GRÁFICA 1 - CON COMPENSACIÓN
+
+# Se genera un gráfico de barras para visualizar la distribución de costos en la solución óptima
 plt.bar(labels, costs_opf, color='skyblue')
 plt.ylabel('Cost [M€]')
 plt.title('Breakdown of costs of NSGA-II solution')
 plt.xticks(rotation=20, fontsize=18)  # Rotar etiquetas para evitar superposición
 # plt.show()
 
-#####
+
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Aplicar estilo de Seaborn para mejor visualización
 sns.set_style("darkgrid")
@@ -133,38 +115,18 @@ plt.show()
 
 
 
+# GRÁFICA 2 - SIN COMPENSACIÓN
 
-# 4.  SOLUCIÓN NSGA II - SIN COMPENSACIÓN
-  
-# Se define la misma solución pero sin compensación reactiva - Todos los Reactores = 0 - Como si estuvieran apagados
-x_nosh = np.array([
-    3,                 # vol_level
-    2,                 # n_cables: Número de cables en paralelo. Solo puede tomar valores enteros entre 2 y 3
-    0,                 # 0 - descativado
-    0,                 # 0 - descativado
-    0,                 # 0 - descativado
-    0,                 # 0 - descativado
-    0,                 # 0 - descativado
-    0.0,               # 0 - descativado
-    0.0,               # 0 - descativado
-    0.0,               # 0 - descativado
-    0.0,               # 0 - descativado
-    0.0,               # 0 - descativado
-    509.72e6           # S_rtr: Potencia nominal del transformador, que puede variar entre 300 MW y 900 MW 
-    ])
-# Se extraen los valores de la solución
+# Se define otra solución sin compensación reactiva
+x_nosh = np.array([3, 2, 0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 509.72e6])
 vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr = x_nosh
+
 # Se calcula el costo de inversión y técnico sin compensación
 cost_invest_no, cost_tech_no, cost_full_no = ff(vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr, p_owf)
-# Se extraen costos específicos del resultado
 c_vol, c_curr, c_losses, c_react, cost_tech, c_cab, c_gis, c_tr, c_reac, cost_invest,c_volover, c_volunder, c_ss, average_v = cost_full_no
-# Se organizan los costos para graficarlos
+
 costs_no= [c_losses, c_cab, c_gis, c_tr, c_reac, c_ss]
 labels = ['Power losses', 'Cables', 'Switchgears', 'Transformers', 'Reactors', 'Substation']
-
-
-# GRÁFICA 2 - SIN COMPENSACIÓN
-  # Se genera un gráfico de barras para visualizar la distribución de costos en la solución óptima
 
 # Se grafica el desglose de costos sin compensación
 plt.bar(labels, costs_no, color='orange')  # Se superpone sobre el gráfico anterior
@@ -173,7 +135,11 @@ plt.title('Breakdown of costs without compensation')
 plt.xticks(rotation=20, fontsize= 18)  # Rotar etiquetas para evitar superposición
 # plt.show()
 
-####
+
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
 
 # Aplicar estilo de Seaborn para mejor visualización
 sns.set_style("darkgrid")
@@ -219,8 +185,8 @@ for bar, cost in zip(bars, costs_no):
 
 
 # GRÁFICA 3 - COMPARACIÓN APILADA
-  # Se comparan ambas configuraciones con barras apiladas
 
+# Se comparan ambas configuraciones con barras apiladas
 cumulative_opf = np.cumsum([0] + costs_opf[:-1])
 cumulative_no = np.cumsum([0] + costs_no[:-1])
 fig, ax = plt.subplots()
@@ -247,7 +213,13 @@ legend = plt.legend(unique_labels.values(), unique_labels.keys(), title="Cost Co
 plt.tight_layout()
 # plt.show()
 
-####
+
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import matplotlib.patheffects as path_effects  # Para mejorar la visibilidad del texto
 
 # Aplicar un estilo más limpio
 sns.set_style("whitegrid")
@@ -312,6 +284,3 @@ ax.legend(unique_labels.values(), unique_labels.keys(), title="Cost Components",
 # Ajustar diseño y mostrar gráfico
 plt.tight_layout()
 plt.show()
-
-
-
