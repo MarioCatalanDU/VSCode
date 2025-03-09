@@ -11,7 +11,7 @@ def generate_wind_speeds_weibull(             # Genera N valores de velocidad de
         k,                                    # k: Parámetro de forma (define la dispersión DE VALORES)
         lambda_,                              # lambda_: Parámetro de escala (relacionado con la velocidad media)
         seed=None                             # seed: Semilla para reproducibilidad -Permite reproducir los mismos resultados al fijar una semilla aleatoria
-    
+        ): 
     if seed is not None:
         np.random.seed(seed)
     # Generar velocidades de viento correctamente escaladas
