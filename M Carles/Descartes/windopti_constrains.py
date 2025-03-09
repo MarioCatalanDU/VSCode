@@ -30,7 +30,7 @@ class MixedVariableProblem_constraints(ElementwiseProblem):
             "react3_bi": Binary(),                       # ""
             "react4_bi": Binary(),                       # ""
             "react5_bi": Binary(),                       # ""
-            "vol_level": Choice(options=["vol220"]),     # "vol_level": Choice(options=["vol132","vol220"]) Escogemos el valor del voltaje
+            "vol": Choice(options=["vol220"]),     # "vol": Choice(options=["vol132","vol220"]) Escogemos el valor del voltaje
             "n_cables": Integer(bounds=(2, 3)),          # n_cables: Número de cables en paralelo. Solo puede tomar valores enteros entre 2 y 3
             "S_rtr": Real(bounds=(300e6, 900e6)),        # S_rtr: Potencia nominal del transformador, que puede variar entre 300 MW y 900 MW
             "react1": Real(bounds=(0.0, 1.0)),           # Tamaños de los reactores, definidos como valores continuos entre 0.0 y 1.0
@@ -61,7 +61,7 @@ class MixedVariableProblem_constraints(ElementwiseProblem):
         # VARIABLES DE DECISIÓN: Estas representan las decisiones que el algoritmo puede ajustar 
         # Extracción de variables: Extraer valores específicos de las variables de decisión desde el diccionario X para facilitar su uso en los cálculos posteriores
         react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, vol, n_cables, S_rtr, react1, react2, react3, react4, react5 = \
-        X["react1_bi"], X["react2_bi"], X["react3_bi"], X["react4_bi"], X["react5_bi"], X["vol_level"], X["n_cables"], X["S_rtr"],X["react1"], X["react2"], X["react3"], X["react4"], X["react5"]
+        X["react1_bi"], X["react2_bi"], X["react3_bi"], X["react4_bi"], X["react5_bi"], X["vol"], X["n_cables"], X["S_rtr"],X["react1"], X["react2"], X["react3"], X["react4"], X["react5"]
           # react1_bi a react5_bi: Binarias, indican si hay un reactor instalado en una posición, si los reactores están activados (1) o desactivados (0)
           # vol: Nivel de voltaje de la red (1 para 132 kV, 2 para 220 kV)
           # n_cables: Número de cables en paralelo
