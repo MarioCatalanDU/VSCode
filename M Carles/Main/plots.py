@@ -17,7 +17,7 @@ import time                                                                 # Bi
 import seaborn as sns                                                       # Para mejorar gráficas
 import matplotlib.patheffects as path_effects                               # Para mejorar la visibilidad del texto
 
-# Llamada a nuestros programas
+# Importación de Nuestras funciones de optimización
 from windopti import MixedVariableProblem                                   # Importa la clase que define el problema de optimización
 from costac_2 import costac_2                                               # Importa la función de costos del sistema
 

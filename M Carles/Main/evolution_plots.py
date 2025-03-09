@@ -1,61 +1,136 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-import costac_2
+# GRÁFICAS DE EVOLUCIÓN 
+
+  # Este script simula y grafica la evolución de los costos y el comportamiento del voltaje en una red eléctrica offshore en función de diferentes niveles de generación de potencia
+  # GeneraR gráficos de voltaje promedio y pérdidas de potencia para analizar el impacto de la compensación reactiva
+  # COMPARACIÓN : Compensación vs No Compensación
+
+# Se evalua
+  # Costos de inversión y operación.
+  # Tensiones nodales.
+  # Pérdidas de potencia
 
 
 
-trials = 100
-ff = costac_2.costac_2
-random_check = np.zeros((trials,6))
-random_checkpf = np.zeros((trials,6))
-avg_list = np.zeros(trials)
-avg_listpf = np.zeros(trials)
-d = 13
-num_int = 7
-#lb = np.array([3, 2, 0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 450e6])  # Lower bound
-#ub = np.array([3, 3, 1, 1, 1, 1, 1, 1.0, 1.0, 1.0, 1.0, 1.0, 1000e6])  # Upper bound
 
-lb = np.array([3, 2, 0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 450e6])  # Lower bound
-ub = np.array([3, 2, 1, 1, 1, 1, 1, 1.0, 1.0, 1.0, 1.0, 1.0, 1000e6])  # Upper bound
 
+# 1. IMPORTAR HERRAMIENTAS
+
+import numpy as np                                                            # Importa la biblioteca NumPy para cálculos numéricos
+import matplotlib as mpl                                                      # Biblioteca para configuraciones avanzadas de gráficos
+import matplotlib.pyplot as plt                                               # Biblioteca para graficar
+
+# Importación de Nuestras funciones de optimización
+import costac_2                                                               # Importa la función de costos del sistema
+
+
+
+
+
+# 2. INICIALIZAR DATOS
+
+trials = 100                                                                  # Número de simulaciones a realizar
+ff = costac_2.costac_2                                                                 # Se define la función de costos a usar
+
+# Inicialización de matrices para almacenar datos
+random_check = np.zeros((trials,6))                                           # Para resultados sin compensación
+random_checkpf = np.zeros((trials,6))                                         # Para resultados con compensación
+avg_list = np.zeros(trials)                                                   # Para almacenar el voltaje promedio sin compensación
+avg_listpf = np.zeros(trials)                                                 # Para almacenar el voltaje promedio con compensación
+
+
+# Dimensiones y límites del problema
+d = 13                                                                        # Número de variables de decisión
+num_int = 7                                                                   # Número de variables enteras en la optimización
+
+# Definición de límites de búsqueda
+lb = np.array([3, 2, 0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 450e6])          # Límite inferior
+ub = np.array([3, 2, 1, 1, 1, 1, 1, 1.0, 1.0, 1.0, 1.0, 1.0, 1000e6])         # Límite superior
+
+# Lista de niveles de generación a simular (2 p.u. hasta 5 p.u.)
 p_owf = 5
-p_owflist = np.linspace(2, p_owf, trials)
-p_owflistpf = np.linspace(2, p_owf, trials)
+p_owflistpf = np.linspace(2, p_owf, trials)                                   # Para simulaciones con compensación
+p_owflist = np.linspace(2, p_owf, trials)                                     # Para simulaciones sin compensación
+
+# Inicialización de historial de variables de decisión
 x_history = np.zeros((trials, d))
 
-x0 = np.array([3, 2, 0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 509.72e6])
-x_opf = np.array([3, 2, 1, 1, 0, 1, 0, 0.519, 0.953, 0.0, 0.737, 0.0, 509.72e6])
-#xnsga = np.array([3, 2, 0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 700e6])
-for i in range(trials):
-        
-        
-        x_history[i,:] = x0
-        vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr = x0
-        p_owf = p_owflist[i]
-        
-        cost_invest, cost_tech, cost_full = ff(vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr, p_owf)
-        #result = ff(h[0], h[1], h[2], h[3] ,h[4] , h[5] ,h[6], x0[7],x0[8],x0[9],x0[10],x0[11],x0[12])
-        random_check[i,:] = [cost_invest, cost_tech, cost_full[10], cost_full[2], cost_full[3], cost_full[11]]
-        average_v = cost_full[13]
-        avg_list[i] = average_v
-        cost_losses_no = random_check[:,3]
+# Configuraciones iniciales para la simulación
 
+# Con compensación
+x_opf = np.array([
+        3, 
+        2, 
+        1, 
+        1, 
+        0, 
+        1, 
+        0, 
+        0.519, 
+        0.953, 
+        0.0, 
+        0.737, 
+        0.0, 
+        509.72e6
+        ])
+
+# Sin compensación
+x0 = np.array([
+        3, 
+        2, 
+        0, 
+        0, 
+        0, 
+        0, 
+        0, 
+        0.0, 
+        0.0, 
+        0.0, 
+        0.0, 
+        0.0, 
+        509.72e6
+        ])
+
+
+# Simulación CON compensación
 for i in range(trials):
-        
-        
         x_history[i,:] = x_opf
         vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr = x_opf
         p_owf = p_owflistpf[i]
-
+        # Se ejecuta la función de costos
         cost_investpf, cost_techpf, cost_fullpf = ff(vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr, p_owf)
-        #print(cost_full[2])
-        #result = ff(h[0], h[1], h[2], h[3] ,h[4] , h[5] ,h[6], x0[7],x0[8],x0[9],x0[10],x0[11],x0[12])
-        random_checkpf[i,:] = [cost_invest, cost_tech, cost_fullpf[10], cost_fullpf[2], cost_fullpf[3], cost_full[11]]
+        # Se almacenan los resultados
+        random_checkpf[i,:] = [cost_investpf, cost_techpf, cost_fullpf[10], cost_fullpf[2], cost_fullpf[3], cost_fullpf[11]]
+        # Coste promedio
         average_vpf = cost_fullpf[13]
+        # Voltaje promedio
         avg_listpf[i] = average_vpf
+        # Pérdidas de potencia
         cost_losses_pf = random_checkpf[:,3]
-        
+
+# Simulación SIN compensación
+for i in range(trials):
+        x_history[i,:] = x0
+        vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr = x0
+        p_owf = p_owflist[i]
+        # Se ejecuta la función de costos
+        cost_invest, cost_tech, cost_full = ff(vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr, p_owf)
+        # Se almacenan los resultados
+        random_check[i,:] = [cost_invest, cost_tech, cost_full[10], cost_full[2], cost_full[3], cost_full[11]]
+        # Coste promedio
+        average_v = cost_full[13]
+        # Voltaje promedio
+        avg_list[i] = average_v
+        # Pérdidas de potencia
+        cost_losses_no = random_check[:,3]
+
+
+
+
+
+ # 3. GRÁFICAS
+  
+# Gráficos de voltaje promedio  
+      
 plt.plot(p_owflist, avg_list, label='Average Node Voltage no compensation')
 plt.plot(p_owflist, avg_listpf, label='Average Node Voltage optimal compensation')
 plt.xlabel('Power Injection [p.u]')
@@ -67,6 +142,7 @@ plt.show()
 
 
 
+# Gráficos de pérdidas de potencia
 
 plt.plot(p_owflist, cost_losses_no, label='Power losses with no compensation')
 plt.plot(p_owflist, cost_losses_pf, label='Power losses with optimal compensation')
@@ -77,82 +153,3 @@ plt.legend()
 plt.show()
 
 
-"""
-plt.plot(p_owflist, avg_list, label='Average Node Voltage')
-
-
-
-for i in range(trials):
-       
-        x0 = np.array([3,2,1,1,1,1,1,0.4,0.0,0.8,0.0,0.4,600e6])
-        x_history[i,:] = x0
-        vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr = x0
-        p_owf = p_owflist[i]
-        
-        cost_invest, cost_tech, cost_full = ff(vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr, p_owf)
-        #result = ff(h[0], h[1], h[2], h[3] ,h[4] , h[5] ,h[6], x0[7],x0[8],x0[9],x0[10],x0[11],x0[12])
-        random_check[i,:] = [cost_invest, cost_tech, cost_full[10], cost_full[2], cost_full[3], cost_full[11]]
-
-        cost_losses_yes = random_check[:,3]
-    
-xnsga = np.array([3, 2, 1, 0, 0, 0, 1, 0.702, 0.0, 0.0, 0.0, 0.839, 666.31e6])
-vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr = xnsga
-cost_invest_nsga, cost_tech_nsga, cost_fullnsga = ff(vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr, p_owf)        
-
-xopf = np.array([3, 2, 1, 0, 0, 0, 1, 0.1711, 0.0, 0.0, 0.0, 0.4775, 666.31e6])
-vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr = xopf
-cost_invest_opf, cost_tech_opf, cost_fullopf = ff(vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr, p_owf)        
- 
-print(cost_invest_nsga, cost_tech_nsga)
-print(cost_invest_opf, cost_tech_opf)
-# print(random_check)
-plt.scatter(random_check[:,0], random_check[:,1], facecolor="none", edgecolor="black")
-plt.scatter(cost_invest_nsga, cost_tech_nsga, color='red', s=50)
-plt.scatter(cost_invest_opf, cost_tech_opf, color='green')
-plt.ylim(0,1500)
-plt.xlim(0,500)
-# Find the index of the row with the smallest sum
-min_sum_row_index = np.argmin(np.sum(random_check, axis=1))
-
-#print(random_check)
-# Print the row
-#print(random_check[min_sum_row_index])
-#print(x_history[min_sum_row_index,:])
-
-plt.show()
- 
-#normalized_cost_volover = random_check[:,2] / np.max(random_check[:,2]) + 1e-8
-#normalized_cost_losses = random_check[:,3] / np.max(random_check[:,3]) + 1e-8
-#normalized_cost_react = random_check[:,4] / np.max(random_check[:,4]) + 1e-8
-#normalized_cost_volunder = random_check[:,5] / np.max(random_check[:,5]) + 1e-8
-
-
-cost_losses = random_check[:,3]
-plt.plot(p_owflist, normalized_cost_volover, label='Overvoltage Cost')
-plt.plot(p_owflist, normalized_cost_losses, label='Losses Cost')
-plt.plot(p_owflist, normalized_cost_react, label='Reactive Power grid Cost')
-plt.plot(p_owflist, normalized_cost_volunder, label='Undervoltage Cost')
-#plt.plot(p_owflist, cost_losses_no, label='Power losses with no compensation')
-plt.title('Evolution of  Costs for Different Power Injections')
-plt.xlabel('Power Injection [p.u]')
-plt.ylabel('Normalized Costs')
-plt.legend()
-plt.show()
-
-
-plt.plot(p_owflist, cost_losses_yes, label='Power losses with compensation')
-plt.xlabel('Power Injection [p.u]')
-#plt.ylabel('Normalized Costs')
-plt.ylabel('Power losses [M€/year]')
-
-#yticks = np.arange(min(cost_losses_yes), max(cost_losses_yes), step=(max(cost_losses_yes)-min(cost_losses_yes))/10)
-#plt.yticks(yticks)
-plt.grid(axis='y', linestyle='--')
-
-plt.title('Power losses at different wind conditions for a 500 MW wind farm', weight='bold')
-plt.legend()
-
-plt.show()
-
-# np.savetxt("random_check.csv", random_check, delimiter=",")
-"""
