@@ -1,9 +1,8 @@
-# NÚCLEO DEL PROBLEMA DE OPTIMIZACIÓN. Define cómo se calculan los objetivos, las restricciones y cómo se simula la red eléctrica offshore.
+# Es una VERSIÓN SIMPLIFICADA DE  windopti.py, enfocada en FACILITAR el CÁLCULO DE COSTOS  y la visualización de GRÁFICAS.
 
-# Objetivo: 
- # Encontrar la mejor configuración de la red optimizando costos y restricciones
+   # Mantiene muchas de las funciones de windopti.py, pero con ajustes para que pueda ser usada de forma más sencilla en análisis y gráficos.
 
- # Define:
+# Define:
    # - ESTRUCTURA: Las variables y restricciones del problema     (return Y_bus, p_owf, q_owf, n_cables, u_i, I_rated, S_rtr, Y_l1, Y_l2, Y_l3, Y_l4, Y_l5, A, B, C, Y_trserie, Y_piserie)
    # - Newton-Raphson: para calcular el flujo de potencia         (return V_wslack, angle_wslack, curr, p_wslack, q_wslack, solution_found)
    # - La evaluación de COSTOS y RESTRICCIONES                    (return cost_invest, cost_tech, gs)
@@ -14,14 +13,12 @@
 
 # 1. IMPORTAR HERRAMIENTAS
 
-import numpy as np                                                # numpy: Librería. Se utiliza para operaciones matemáticas y de álgebra lineal
-import cmath                                                      # cmath: Librería. Biblioteca matemática para números complejos
-import pymoo.gradient.toolbox as anp                              # anp: Importa el módulo toolbox del paquete pymoo.gradient y lo asigna al alias anp. Se utiliza comúnmente en Pymoo como una alternativa al módulo de NumPy, ya que pymoo.gradient.toolbox está diseñado para facilitar el cálculo de gradientes y operaciones relacionadas con optimización
-import time                                                       # time: Proporciona varias funciones relacionadas con la medición y el manejo del tiempo (se utiliza para medir la duración de ciertas operaciones)
+import numpy as np                              # numpy: Librería. Se utiliza para operaciones matemáticas y de álgebra lineal
+import pandas as pd                             # pandas: manejo y análisis de datos en estructuras tabulares (como DataFrames y Series). Permite leer, manipular, filtrar y analizar datos de manera eficiente en Python
+import cmath                                    # cmath: Librería. Biblioteca matemática para números complejos
+import random                                   # random: para generar números aleatorios y realizar operaciones aleatorias, como seleccionar elementos aleatorios de una lista, barajar datos o generar distribuciones aleatorias
 
-from pymoo.core.problem import ElementwiseProblem                 # ElementwiseProblem: indica que cada solución se evalúa individualmente
-from pymoo.core.variable import Real, Integer, Choice, Binary     # define diferentes tipos de variables para problemas de optimización (mejora respecto a problem)
-
+from pprint import pprint                       # imprimir estructuras de datos complejas de forma más legible y organizada en la consola
 
 
 
@@ -29,64 +26,19 @@ from pymoo.core.variable import Real, Integer, Choice, Binary     # define difer
 
 # 2. OPTIMIZACIÓN
 
-# DEFINE the optimization problem with mixed variable types
-class MixedVariableProblem(ElementwiseProblem):
+# Función principal que calcula los costos de inversión y operación para una red eléctrica offshore -> Simplificación de windopti para replicarlo graficamente
+
+def costac_2(vol, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val,react4_val, react5_val, S_rtr, p_owf): 
 
 
-
+   # INICIA LA SIMPLIFICACIÓN DE windopti
     # INICIALIZAR PROBLEMA
 
-      # Variables de decisión del problema
-    def __init__(self, **kwargs):
-        # vars: diccionario que define las variables de decisión del problema
-        vars = {                                         
-            "react1_bi": Binary(),                       # variables binarias (0 o 1), que indican si un reactor está activado (1) o desactivado (0)
-            "react2_bi": Binary(),                       # ""
-            "react3_bi": Binary(),                       # ""
-            "react4_bi": Binary(),                       # ""
-            "react5_bi": Binary(),                       # ""
-            "vol_level": Choice(options=["vol220"]),     # vol_level: Choice(options=["vol132","vol220"]) Escogemos el valor del voltaje
-            "n_cables": Integer(bounds=(2, 3)),          # n_cables: Número de cables en paralelo. Solo puede tomar valores enteros entre 2 y 3
-            "S_rtr": Real(bounds=(500e6, 1000e6)),       # S_rtr: Potencia nominal del transformador, que puede variar entre 300 MW y 900 MW
-            "react1": Real(bounds=(0.0, 1.0)),           # Tamaños de los reactores, definidos como valores continuos entre 0.0 y 1.0
-            "react2": Real(bounds=(0.0, 1.0)),           # ""
-            "react3": Real(bounds=(0.0, 1.0)),           # "" 
-            "react4": Real(bounds=(0.0, 1.0)),           # ""
-            "react5": Real(bounds=(0.0, 1.0)),           # ""
-        }
 
-        # Llama al constructor de la clase base ElementwiseProblem (de pymoo), que configura el problema de optimización
-        super().__init__(
-            vars=vars,                                   # vars: diccionario definido anteriormente, que contiene todas las variables de decisión
-            n_obj=2,                                     # n_obj: Número de funciones objetivo (2: costos de inversión y técnicos)
-            **kwargs)
+      # No hay Variables de decisión del problema - Em windopti si
 
 
-
-
-
-
-    # EVALUATE
-      # Evalúa las soluciones generadas por el algoritmo de optimización
-    def _evaluate(self, X, out, *args, **kwargs):
-                      # X: Diccionario que contiene los valores de las variables de decisión para la solución actual
-                      # out: Diccionario de salida donde se almacenan los valores de las funciones objetivo (F) y las restricciones (G)
-        
-        # VARIABLES DE DECISIÓN: Estas representan las decisiones que el algoritmo puede ajustar 
-        # Extracción de variables: Extraer valores específicos de las variables de decisión desde el diccionario X para facilitar su uso en los cálculos posteriores
-        react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, vol, n_cables, S_rtr, react1, react2, react3, react4, react5 = \
-        X["react1_bi"], X["react2_bi"], X["react3_bi"], X["react4_bi"], X["react5_bi"], X["vol_level"], X["n_cables"], X["S_rtr"],X["react1"], X["react2"], X["react3"], X["react4"], X["react5"]
-          # react1_bi a react5_bi: Binarias, indican si hay un reactor instalado en una posición, si los reactores están activados (1) o desactivados (0)
-          # vol: Nivel de voltaje de la red (1 para 132 kV, 2 para 220 kV)
-          # n_cables: Número de cables en paralelo
-          # S_rtr: Potencia nominal del transformador
-          # react1 a react5: Tamaños de los reactores
-
-
-
-
-
-        # Evaluate.1 
+     # Evaluate.1 
          # CONSTRUCCIÓN DEL MODELO DE RED (build_grid_data)
          
           # Build the admittance matrix (Ybus) of the grid and define the general data
@@ -108,34 +60,54 @@ class MixedVariableProblem(ElementwiseProblem):
                             ):
             # return Y_bus, p_owf, q_owf, n_cables, u_i, I_rated, S_rtr, Y_l1, Y_l2, Y_l3, Y_l4, Y_l5, A, B, C, Y_trserie, Y_piserie    
             
-
+ 
             # 1.1 Propiedades de los cables: 
              # Define los valores de resistencia (R), capacitancia (Cap) e inductancia (L) dependiendo del nivel de voltaje (vol)
-            if vol == "vol132":
-                u_i = 132e3    # V
-                R = 0.0067     # ohm/km
-                Cap = 0.25e-6  # F/km
-                L = 0.35e-3    # H/km
-                A = 1.971e6    # Coeficientes utilizados para calcular el costo de los cables en función de su capacidad de carga y longitud.
-                B = 0.209e6    # ""
-                C = 1.66       # ""
-                I_rated = 825  # A
-            
-            if vol == "vol220":
-                u_i = 220e3    # V
-                R = 0.0067     # ohm/km
-                Cap = 0.19e-6  # F/km
-                L = 0.38e-3    # H/km
-                A = 3.181e6    # Coeficientes utilizados para calcular el costo de los cables en función de su capacidad de carga y longitud.
-                B = 0.11e6     # ""
-                C = 1.16       # ""
-                I_rated = 825  # A
+            if vol == 1:
+                u_i = 66e3    # V          
+                R = 0.0067    # ohm/km      
+                Cap = 0.24e-6 # F/km            
+                L = 0.36e-3   # H/km        
+                A = 0.688e6   # Coeficientes utilizados para calcular el costo de los cables en función de su capacidad de carga y lon     
+                B = 0.625e6   # ""     
+                C = 2.05      # ""  
+                I_rated= 470  # A        
+
+            elif vol == 2:
+                u_i = 132e3    # V          
+                R = 0.0067     # ohm/km      
+                Cap = 0.25e-6  # F/km             
+                L = 0.35e-3    # H/km        
+                A = 1.971e6    # Coeficientes utilizados para calcular el costo de los cables en función de su capacidad de carga y lon
+                B = 0.209e6    # ""     
+                C = 1.66      # ""  
+                I_rated = 825  # A        
+
+            elif vol == 3:
+                u_i = 220e3    # V          
+                R = 0.0067     # ohm/km      
+                Cap = 0.19e-6  # F/km             
+                L = 0.38e-3    # H/km        
+                A = 3.181e6    # Coeficientes utilizados para calcular el costo de los cables en función de su capacidad de carga y lon
+                B = 0.11e6     # ""     
+                C = 1.16       # ""  
+                I_rated = 825  # A        
+
+            if vol == 4:
+                u_i = 400e3    # V          
+                R = 0.0067     # ohm/km      
+                Cap = 0.16e-6  # F/km            
+                L = 0.42e-3    # H/km        
+                A = 5.8038e6   # Coeficientes utilizados para calcular el costo de los cables en función de su capacidad de carga y lon
+                B = 0.044525e6 # ""     
+                C = 0.72       # ""  
+                I_rated= 600   # A        
 
             Y_ref = Sbase / u_i**2  # 1 / ohm
             V_ref = u_i
 
 
-            # 1.2 TRAFO
+            # 1.2 Trafo
              # Trafo parameters
             U_rtr = u_i  # V
             P_Cu = 60e3  # W
@@ -149,78 +121,73 @@ class MixedVariableProblem(ElementwiseProblem):
             Y_tr = (G_tri + 1j * B_tri) / Y_ref
 
             # Computation of Y series (fórmulas)
-            R_tr = P_Cu / (3 * (S_rtr / (np.sqrt(3) * u_i))**2) 
-            X_tr = np.sqrt((u_k * (U_rtr**2 / S_rtr))**2 - R_tr**2)
+            R_tr = P_Cu / (3 * (S_rtr / (np.sqrt(3) * u_i))**2)
+            X_tr = np.sqrt(((u_k * u_i / np.sqrt(3) / (S_rtr / (np.sqrt(3) * u_i)))**2 - R_tr**2))
             Z_tr = R_tr + 1j * X_tr
             Y_trserie =  (1 / Z_tr) / Y_ref
-            
+
             # Per unit parameters for OPF
             g_tr = np.real(Y_tr)
             b_tr = np.imag(Y_tr)
-            r_tr = np.real(Z_tr * Y_ref)     # multiply by Y_ref to have it in p.u.
+            r_tr = np.real(Z_tr * Y_ref) # multiply by Y_ref to have it in p.u
             x_tr = np.imag(Z_tr * Y_ref)
- 
 
-            # 1.3 CABLES
+ 
+            # 1.3 Cables
             R = 0.0067     # ohm/km
             Cap = 0.17e-6  # F/km
             L = 0.40e-3    # H/km
             Y = 1j * (2 * np.pi * f * Cap / 2)
             Z = R + 1j * (2 * np.pi * f * L)
-            theta = l * np.sqrt(Z * Y)
+            theta = l / 2 * np.sqrt(Z * Y)
             Y_pi = n_cables * (Y * l / 2 * np.tanh(theta / 2) / (theta / 2)) / Y_ref
             G_pi = np.real(Y_pi)
-            B_pi = np.imag(Y_pi)
-            Z_piserie = (Z * l  * np.sinh(theta / 1) / (theta / 1)) / n_cables
-            Y_piserie =  (1 / Z_piserie)  / Y_ref
+            Z_piserie = (Z * l  * np.sinh(theta) / (theta))
+            Y_piserie = n_cables * (1 / Z_piserie)  / Y_ref 
 
             # Per unit parameters for OPF
             b_unit = np.imag(Y_pi)
             r_unit = np.real(Z_piserie * Y_ref)
             x_unit = np.imag(Z_piserie * Y_ref)
-           
 
-            # 1.4 COMPENSATOR
-            if react1_bi:
-                Y_l1 =  - 1j * react1_val
+
+            # 1.4 Compensator
+            if react1_bi == 1:
+                Y_l1 = - 1j * react1_val
             else:
                 Y_l1 = 0
-                react1_bi = 0.0
 
-            if react2_bi:
-                Y_l2 =  - 1j * react2_val
-                
+            if react2_bi == 1:
+                Y_l2 = - 1j * react2_val
+
             else:
                 Y_l2 = 0
-                react2_bi = 0.0
 
-            if react3_bi:
-                Y_l3 =  - 1j * react3_val
+            if react3_bi == 1:
+                Y_l3 = - 1j * react3_val
             else:
                 Y_l3 = 0
-                react3_bi = 0.0
 
-            if react4_bi:
-                Y_l4 =  - 1j * react4_val
+            if react4_bi == 1:
+                Y_l4 = - 1j * react4_val
             else:
                 Y_l4 = 0
-                react1_bi = 0.0
 
-            if react5_bi:
-                Y_l5 =  - 1j * react5_val
+            if react5_bi == 1:
+                Y_l5 = - 1j * react5_val
             else:
                 Y_l5 = 0
-                react5_bi = 0.0
 
 
             # 1.5 GRID CONNECTION
             scr = 15  # which value should we put here 5 or 50?
             xrr = 10
-            V_grid = 220e3  # V
-            zgridm = V_grid**2 / (scr * p_owf * Sbase)
+            zgridm = V_ref**2 / (scr * p_owf * Sbase)
             rgrid = np.sqrt(zgridm**2 / (xrr**2 + 1))
             xgrid = xrr * rgrid
             zgrid = rgrid + 1j * xgrid
+            rgridpu = np.real(zgrid * Y_ref)
+            xgridpu = np.imag(zgrid * Y_ref)
             Y_g = (1 / zgrid) / Y_ref
 
 
@@ -231,11 +198,11 @@ class MixedVariableProblem(ElementwiseProblem):
                         [0, 0, -Y_piserie, Y_piserie + Y_pi + Y_l4 + Y_trserie, -Y_trserie, 0],
                         [0, 0, 0, -Y_trserie, Y_trserie + Y_tr + Y_l5 + Y_g, -Y_g],
                         [0, 0, 0, 0, -Y_g, Y_g]])
-        
+
             return Y_bus, p_owf, q_owf, n_cables, u_i, I_rated, S_rtr, Y_l1, Y_l2, Y_l3, Y_l4, Y_l5, A, B, C, Y_trserie, Y_piserie, Y_ref
-         
+
            # return Y_bus, p_owf, q_owf, n_cables, u_i, I_rated, S_rtr, Y_l1, Y_l2, Y_l3, Y_l4, Y_l5, A, B, C, Y_trserie, Y_piserie    
-        # FIN Evaluate.1 
+        # FIN Evaluate.1
 
 
 
@@ -265,7 +232,6 @@ class MixedVariableProblem(ElementwiseProblem):
                   ):
             # return: [V, V_wslack, angle_wslack, curr, p_wslack, q_wslack, solution_found]                
           
-            start_time = time.time()          # start_time: Guarda el tiempo actual del sistema en el momento en que se ejecuta la función. Esto se utiliza comúnmente para medir el tiempo de ejecución de un bloque de código o de toda la función
           
 
             # 2.1 Inicialización de parámetros
@@ -405,7 +371,6 @@ class MixedVariableProblem(ElementwiseProblem):
             curr_inj = np.zeros((nbus),dtype = "complex")
             curr = np.zeros(nbus - 2)
             if k + 1 < max_iter:
-                end_time = time.time()                                            # end_time: # Guarda el tiempo actual del sistema en el momento en que se finaliza la función. Esto se utiliza comúnmente para medir el tiempo de ejecución de un bloque de código o de toda la función
                 solution_found = True
 
                 Iinj = Y_bus @ (V_wslack * np.exp(1j * angle_wslack))             # Iing:  Corrientes inyectadas en cada nodo
@@ -448,14 +413,15 @@ class MixedVariableProblem(ElementwiseProblem):
 
             return V_wslack, angle_wslack, curr, p_wslack, q_wslack, solution_found
         
-            # return V_wslack, angle_wslack, curr, p_wslack, q_wslack, solution_found
-        # Fin Evaluate.2
-
+          # return V_wslack, angle_wslack, curr, p_wslack, q_wslack, solution_found
+    # Fin Evaluate.2
         
 
 
 
-        # Evaluate.3:
+
+
+         # Evaluate.3:
           # CÁLCULOS DE COSTES
           # Calcula:
             # - cost_invest: Costo de inversión 
@@ -533,31 +499,32 @@ class MixedVariableProblem(ElementwiseProblem):
 
 
             # Cada reactor tiene costos asociados a su tamaño y ubicación
-            if react1_bi:
-                c_r1 = k_off * (abs(Y_l1) * Y_ref * (V[0])**2) + p_off
+            # Diferencia con windopti. Ponemos == 1
+            if react1_bi == 1:
+                #  c_r1 = k_off * (abs(Y_l1) * (V[0])**2) + p_off
+                c_r1 = k_off * (abs(Y_l1)  * (V[0])**2) + p_off
             else:
                 c_r1 = 0
 
-            if react2_bi:
-                c_r2 = k_off * (abs(Y_l2) * Y_ref * (V[1])**2) + p_off
+            if react2_bi == 1:
+                c_r2 = k_off * (abs(Y_l2) * (V[1])**2) + p_off
             else:
                 c_r2 = 0
 
-            if react3_bi:
-                c_r3 = k_mid * (abs(Y_l3) * Y_ref * (V[2])**2) + p_mid
+            if react3_bi == 1:
+                c_r3 = k_mid * (abs(Y_l3)  * (V[2])**2) + p_mid
             else:
                 c_r3 = 0
 
-            if react4_bi:
-                c_r4 = k_on * (abs(Y_l4) * Y_ref * (V[3])**2) + p_on
+            if react4_bi == 1:
+                c_r4 = k_on * (abs(Y_l4)  * (V[3])**2) + p_on
             else:
                 c_r4 = 0
 
-            if react5_bi:
-                c_r5 = k_on * (abs(Y_l5) * Y_ref * (V[4])**2) + p_on
+            if react5_bi == 1:
+                c_r5 = k_on * (abs(Y_l5)  * (V[4])**2) + p_on
             else:
                 c_r5 = 0
-            
 
             c_reac = (c_r1 + c_r2 + c_r3 + c_r4 + c_r5) * 1
 
@@ -569,31 +536,42 @@ class MixedVariableProblem(ElementwiseProblem):
             c_react = 0
             if q_wslack[nbus-1] != 0:
                     c_react = abs(q_wslack[nbus-1]) * penalty
-            
-            
+
+
 
             # 3.2 RESTRICCIONES
 
              # Las restricciones garantizan que el sistema opera dentro de límites aceptables
              # we try to implement the constraints in pymoo form
 
-            # Over or Below voltages
+            # Over or below voltages (más largo que windopti)
             c_vol = 0
-            for i in range(nbus-1):                              # Calcula una penalización por violación de límites de voltaje en los nodos del sistema eléctrico
+            for i in range(nbus-1):                              # Calcula una penalización por violación de límites de voltaje en los nodos del sistema eléctrico                        
                 # c_vol += (abs(V[i] - 1) * 100)
                 if V[i] > 1.1:                                   # Chequeo de sobrevoltaje (Limita la corriente máxima)
                     c_vol += (V[i] - 1.1) * penalty
                 elif V[i] < 0.9:                                 # Chequeo de subtensión (Limita la corriente mínima)
-                    c_vol += (0.9 - V[i]) * penalty  
+                    c_vol += (0.9 - V[i]) * penalty
+            average_v = sum(V) / len(V)
+            c_volover = 0
+            for i in range(nbus-1):
+                if V[i] > 1.1:
+                    c_volover += abs(V[i] - 1) * penalty
+            c_volunder = 0.0
+            for i in range(nbus-1):
+                if V[i] < 0.9:
+                    c_volunder += abs(1 - V[i]) * penalty
+      
 
-            # Transformres
+            # Transformers
             i_max_tr = S_rtr / Sbase                             # rated current of the transformer
             c_curr = 0
             if abs(curr[0]) > 1.1 * i_max_tr:
                 c_curr += (abs(curr[0]) - i_max_tr) * penalty
             if abs(curr[3]) > 1.1 * i_max_tr:
                 c_curr += (abs(curr[3]) - i_max_tr) * penalty
-            
+
+
             # Cables
             i_maxcb =  (Sncab / Sbase) * n_cables                # rated current of the cables
             if abs(curr[1]) > 1.1 * i_maxcb:
@@ -602,38 +580,17 @@ class MixedVariableProblem(ElementwiseProblem):
                 c_curr += (abs(curr[2]) - i_maxcb) * penalty
 
 
-            # Overvoltages (Sobretensiones)
-             # Verifica que el voltaje en cada nodo no supere 1.1 pu
-            g1_vol = (1 / 1.1) * (V[0] - 1.1)
-            g2_vol = (1 / 1.1) * (V[1] - 1.1)
-            g3_vol = (1 / 1.1) * (V[2] - 1.1)
-            g4_vol = (1 / 1.1) * (V[3] - 1.1)
-            g5_vol = (1 / 1.1) * (V[4] - 1.1)
-
-            # Under voltages (Subtensiones)
-             # Verifica que el voltaje no caiga por debajo de 0.9 pus
-            g6_vol = (1 / 0.9) * (0.9 - V[0])
-            g7_vol = (1 / 0.9) * (0.9 - V[1])
-            g8_vol = (1 / 0.9) * (0.9 - V[2])
-            g9_vol = (1 / 0.9) * (0.9 - V[3])
-            g10_vol = (1 / 0.9) * (0.9 - V[4])
-
-            
-            # Vector Restricciones
-            gs = [g1_vol, g2_vol, g3_vol, g4_vol, g5_vol, g6_vol, g7_vol, g8_vol, g9_vol, g10_vol]
-            
-
             # Costes:
+            cost_invest = c_cab + c_gis + c_tr + c_reac + c_ss
             cost_tech = c_vol + c_curr + c_react + c_losses
-            cost_invest = c_cab + c_gis + c_tr + c_reac + c_ss 
             cost_tech1 = c_vol
             cost_tech2 = c_curr
             cost_tech3 = c_react
             cost_tech4 = c_losses
-            cost_full = [c_vol, c_curr, c_losses, c_react, cost_tech, c_cab, c_gis, c_tr, c_reac,c_ss, cost_invest]
-            
-            return cost_invest, cost_tech, gs, g1_vol, cost_full
-            
+            cost_full = [c_vol, c_curr, c_losses, c_react, cost_tech, c_cab, c_gis, c_tr, c_reac, cost_invest,c_volover, c_volunder, c_ss, average_v]
+
+            return cost_invest, cost_tech, cost_full
+        
           # return cost_invest, cost_tech, gs
         # Fin Evaluate.3
 
@@ -653,35 +610,29 @@ class MixedVariableProblem(ElementwiseProblem):
         # Main data
 
         # Parámetros principales de la red
-        nbus = 6
-        vslack = 1.0
-        dslack = 0.0
-        max_iter = 20
-        epss = 1e-6
-
+        nbus = 6       # VA
+        vslack = 1.0   # Hz
+        dslack = 0.0   #  distance to shore in km
+        max_iter = 20  # p.u,  5 is equivalent to 500 MW owf 
+        epss = 1e-6    # p.u, we assume no reactive power is generated at plant
+        
         # Parámetros base del sistema
         Sbase = 100e6  # VA
         f = 50         # Hz
         l = 100        #  distance to shore in km
-        p_owf = 5      # p.u,  5 is equivalent to 500 MW owf
+        #p_owf = 5      # p.u, equivalent to 500 MW owf
         q_owf = 0      # p.u, we assume no reactive power is generated at plant
 
 
         # Construcción de la red
-        Y_bus, p_owf, q_owf, n_cables, u_i, I_rated, S_rtr, Y_l1, Y_l2, Y_l3, Y_l4, Y_l5, A, B, C, y_trserie, y_piserie, Y_ref = build_grid_data(Sbase, f, l, p_owf, q_owf, vol, S_rtr, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1, react2, react3, react4, react5)
-
+        Y_bus, p_owf, q_owf, n_cables, u_i, I_rated, S_rtr, Y_l1, Y_l2, Y_l3, Y_l4, Y_l5, A, B, C, y_trserie, y_piserie, Y_ref = build_grid_data(Sbase, f, l, p_owf, q_owf, vol, S_rtr, n_cables, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, react1_val, react2_val, react3_val, react4_val, react5_val)
+       
         # Cálculo del flujo de potencia
         V_wslack, angle_wslack, curr, p_wslack, q_wslack, solution_found = run_pf(p_owf, q_owf, Y_bus, nbus, vslack, dslack, max_iter, epss, y_trserie, y_piserie)
-
+       
         #  Cálculo de costos y restricciones
-        cost_invest, cost_tech, gs, g1_vol, cost_full  = compute_costs(p_owf, p_wslack, q_wslack, V_wslack, curr, nbus, n_cables, u_i, I_rated, S_rtr, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, Y_l1, Y_l2, Y_l3, Y_l4, Y_l5, Y_ref, solution_found)
-        #cost_invest, cost_tech  = compute_costs(p_owf, p_wslack, q_wslack, V_wslack, curr, nbus, n_cables, u_i, I_rated, S_rtr, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, Y_l1, Y_l2, Y_l3, Y_l4, Y_l5, Y_ref, solution_found)  
-        
-        
-        # Preparación para el optimizador
-          # Fill F and G <= 0
-        out["F"] = [cost_invest, cost_tech]      # Contiene los objetivos del problema de optimización (cost_invest, cost_tech)
-        # out["G"] = np.array([gs[0], gs[1], gs[2], gs[3], gs[4], gs[5], gs[6], gs[7], gs[8], gs[9], gs[10], gs[11], gs[12], gs[13]])    # Contiene las restricciones (gi<=0)
+        cost_invest, cost_tech, cost_full = compute_costs(p_owf, p_wslack, q_wslack, V_wslack, curr, nbus, n_cables, u_i, I_rated, S_rtr, react1_bi, react2_bi, react3_bi, react4_bi, react5_bi, Y_l1, Y_l2, Y_l3, Y_l4, Y_l5, Y_ref, solution_found) 
 
-        
- 
+        return cost_invest, cost_tech, cost_full
+        # Nos devuelve los costos para facilitar la obtención de gráficos
+        # A diferencia d windopti que nos devulve un diccionario
