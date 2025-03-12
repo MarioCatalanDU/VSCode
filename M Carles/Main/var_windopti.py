@@ -1,17 +1,18 @@
-# NÚCLEO DEL PROBLEMA DE OPTIMIZACIÓN. Define cómo se calculan los objetivos, las restricciones 
-# y cómo se simula la red eléctrica offshore.
+# windopti_var.py
+# ---------------------------------------------------------------------------------
+# NÚCLEO DEL PROBLEMA DE OPTIMIZACIÓN CON POTENCIA VARIABLE.
 #
-# Objetivo: 
-#  Encontrar la mejor configuración de la red optimizando costos y restricciones
+# Esta versión es similar a la de windopti (la versión final que te gusta),
+# pero en el método _evaluate se utiliza la potencia variable obtenida de Weibull
+# en lugar de una potencia fija (p_owf=5).
 #
-# Define:
-#  - ESTRUCTURA: Las variables y restricciones del problema     
-#      (return Y_bus, p_owf, q_owf, n_cables, u_i, I_rated, S_rtr, 
-#       Y_l1, Y_l2, Y_l3, Y_l4, Y_l5, A, B, C, Y_trserie, Y_piserie, Y_ref)
-#  - Newton-Raphson: para calcular el flujo de potencia         
-#      (return V_wslack, angle_wslack, curr, p_wslack, q_wslack, solution_found)
-#  - La evaluación de COSTOS y RESTRICCIONES                    
-#      (return cost_invest, cost_tech, gs, g1_vol, cost_full)
+# Se asume que el módulo Weibull.py provee:
+#   - generate_wind_speeds_weibull(N, k, lambda_, seed=None)
+#   - wind_speed_to_power(wind_speeds, n_turbines)
+#
+# Los resultados se convertirán a p.u. de forma que, si la potencia promedio es 500 MW,
+# se asigne p_owf = 5.
+# ---------------------------------------------------------------------------------
 
 import numpy as np
 import cmath
@@ -21,8 +22,11 @@ import time
 from pymoo.core.problem import ElementwiseProblem
 from pymoo.core.variable import Real, Integer, Choice, Binary
 
+# Importamos las funciones de Weibull para generar potencia variable
+from Weibull import generate_wind_speeds_weibull, wind_speed_to_power
+
 # ---------------------------------------------------------------------------------
-# Clase del Problema de Optimización con Funciones como Métodos
+# Clase del Problema de Optimización con Variables Mixtas (Versión Variable)
 # ---------------------------------------------------------------------------------
 class MixedVariableProblem(ElementwiseProblem):
     
@@ -33,7 +37,9 @@ class MixedVariableProblem(ElementwiseProblem):
             "react3_bi": Binary(),
             "react4_bi": Binary(),
             "react5_bi": Binary(),
-            "vol_level": Choice(options=["vol132", "vol220"]),
+            # Mantenemos la misma definición, aunque aquí solo usaremos "vol220"
+            # si quieres probar ambas, puedes añadir ambas opciones.
+            "vol_level": Choice(options=["vol220"]),
             "n_cables": Integer(bounds=(2, 3)),
             "S_rtr": Real(bounds=(500e6, 1000e6)),
             "react1": Real(bounds=(0.0, 1.0)),
@@ -45,60 +51,58 @@ class MixedVariableProblem(ElementwiseProblem):
         super().__init__(vars=vars, n_obj=2, **kwargs)
     
     # -------------------------------------------------------------------------
-    # Método: build_grid_data
+    # Método: build_grid_data (igual que en la versión original)
     # -------------------------------------------------------------------------
     def build_grid_data(self, Sbase, f, l, p_owf, q_owf, vol, S_rtr, n_cables,
                         react1_bi, react2_bi, react3_bi, react4_bi, react5_bi,
                         react1_val, react2_val, react3_val, react4_val, react5_val):
-        # 1.1 Propiedades de los cables según el nivel de voltaje
         if vol == "vol132":
-            u_i = 132e3    # V
-            R = 0.0067     # ohm/km      
-            Cap = 0.25e-6  # F/km            
-            L = 0.35e-3    # H/km        
-            A = 1.971e6    # Coeficiente para costo de cables
-            B = 0.209e6    
-            C = 1.66       
-            I_rated = 825  
+            u_i = 132e3
+            R = 0.0067
+            Cap = 0.25e-6
+            L = 0.35e-3
+            A = 1.971e6
+            B = 0.209e6
+            C = 1.66
+            I_rated = 825
         elif vol == "vol220":
-            u_i = 220e3    # V          
-            R = 0.0067     
-            Cap = 0.19e-6  
-            L = 0.38e-3    
-            A = 3.181e6    
-            B = 0.11e6     
-            C = 1.16       
-            I_rated = 825  
+            u_i = 220e3
+            R = 0.0067
+            Cap = 0.19e-6
+            L = 0.38e-3
+            A = 3.181e6
+            B = 0.11e6
+            C = 1.16
+            I_rated = 825
         else:
             u_i = 220e3
             A = 3.181e6; B = 0.11e6; C = 1.16; I_rated = 825
-        Y_ref = Sbase / u_i**2  # 1/ohm
+        Y_ref = Sbase / u_i**2
         V_ref = u_i
 
         # 1.2 TRAFO
-        U_rtr = u_i  
-        P_Cu = 60e3  
-        P_Fe = 40e3  
-        u_k = 0.18   
-        i_o = 0.012  
+        U_rtr = u_i
+        P_Cu = 60e3
+        P_Fe = 40e3
+        u_k = 0.18
+        i_o = 0.012
         G_tri = (P_Fe / U_rtr**2)
         B_tri = - (i_o * (S_rtr / U_rtr**2))
         Y_tr = (G_tri + 1j * B_tri) / Y_ref
-        R_tr = P_Cu / (3 * (S_rtr / (np.sqrt(3) * u_i))**2) 
+        R_tr = P_Cu / (3 * (S_rtr / (np.sqrt(3) * u_i))**2)
         X_tr = np.sqrt((u_k * (U_rtr**2 / S_rtr))**2 - R_tr**2)
         Z_tr = R_tr + 1j * X_tr
         Y_trserie = (1 / Z_tr) / Y_ref
 
-        # Parámetros para OPF
         g_tr = np.real(Y_tr)
         b_tr = np.imag(Y_tr)
         r_tr = np.real(Z_tr * Y_ref)
         x_tr = np.imag(Z_tr * Y_ref)
      
         # 1.3 CABLES
-        R = 0.0067     
-        Cap = 0.17e-6  
-        L_val = 0.40e-3    
+        R = 0.0067
+        Cap = 0.17e-6
+        L_val = 0.40e-3
         Y_val = 1j * (2 * np.pi * f * Cap / 2)
         Z_val = R + 1j * (2 * np.pi * f * L_val)
         theta = l * np.sqrt(Z_val * Y_val)
@@ -145,7 +149,6 @@ class MixedVariableProblem(ElementwiseProblem):
         zgrid = rgrid + 1j * xgrid
         Y_g = (1 / zgrid) / Y_ref
 
-        # Construcción de la matriz Y_bus (6 nodos)
         Y_bus = np.array([
             [Y_trserie + Y_tr + Y_l1, -Y_trserie,                  0,                     0,                     0,      0],
             [-Y_trserie,             Y_piserie + Y_pi + Y_l2 + Y_trserie, -Y_piserie,         0,                     0,      0],
@@ -159,11 +162,10 @@ class MixedVariableProblem(ElementwiseProblem):
                 Y_l1, Y_l2, Y_l3, Y_l4, Y_l5, A, B, C, Y_trserie, Y_piserie, Y_ref)
     
     # -------------------------------------------------------------------------
-    # Método: run_pf (Cálculo del flujo de potencia mediante Newton-Raphson)
+    # Método: run_pf (Cálculo del flujo de potencia)
     # -------------------------------------------------------------------------
     def run_pf(self, p_owf, q_owf, Y_bus, nbus, V_slack, angle_slack,
                max_iter, eps, y_trserie, y_piserie, S_rtr, n_cables, vol):
-        # Inicialización de voltajes y ángulos para nodos no slack
         V = np.ones(nbus - 1, dtype=float)
         V_wslack = np.empty(nbus, dtype=float)
         V_wslack[:nbus - 1] = V
@@ -181,7 +183,6 @@ class MixedVariableProblem(ElementwiseProblem):
         epsilon = 1e10
         k = 0
 
-        # Iteración de Newton-Raphson
         while epsilon > eps and k < max_iter:
             k += 1
             x = np.concatenate((angles, V))
@@ -200,7 +201,6 @@ class MixedVariableProblem(ElementwiseProblem):
                         np.imag(Y_bus[i, j]) * np.cos(angle_wslack[i]-angle_wslack[j])
                     )
             deltaPQ = PQ_obj - np.concatenate((P, Q))
-            # Construcción del Jacobiano
             J11 = np.zeros((nbus - 1, nbus - 1))
             J12 = np.zeros((nbus - 1, nbus - 1))
             J21 = np.zeros((nbus - 1, nbus - 1))
@@ -265,7 +265,6 @@ class MixedVariableProblem(ElementwiseProblem):
             q_wslack = np.zeros(nbus)
             return V_wslack, angle_wslack, curr, p_wslack, q_wslack, solution_found
 
-        # Cálculos finales: Potencias en el nodo slack y corrientes
         p_wslack = np.zeros(nbus)
         q_wslack = np.zeros(nbus)
         curr_inj = np.zeros(nbus, dtype="complex")
@@ -291,7 +290,7 @@ class MixedVariableProblem(ElementwiseProblem):
         i_54 = abs((cmath.rect(V[3], angles[3]) - cmath.rect(V[4], angles[4])) * y_trserie)
         curr = np.array([i_21, i_32, i_43, i_54])
         return V_wslack, angle_wslack, curr, p_wslack, q_wslack, solution_found
-    
+
     # -------------------------------------------------------------------------
     # Método: compute_costs (Cálculo de Costos y Restricciones)
     # -------------------------------------------------------------------------
@@ -305,25 +304,17 @@ class MixedVariableProblem(ElementwiseProblem):
             q_wslack = np.zeros(nbus)
         if V is None:
             V = np.ones(nbus)
-        # Cálculo de pérdidas AC (coste técnico)
-        p_lossac = Sbase * (p_owf + p_wslack[5]) * 1e-6  # en MW
+        p_lossac = Sbase * (p_owf + p_wslack[5]) * 1e-6  # MW
 
-        # Costo de cables (inversión)
         Sncab = np.sqrt(3) * u_i * I_rated
         eur_sek = 0.087
         c_cab = n_cables * (A + B * np.exp(C * Sncab / 1e8)) * l * eur_sek / 1e6
-
-        # Costo de switchgears (inversión)
         c_gis = (0.0017 * u_i * 1e-3 + 0.0231)
-        # Costo de subestación (inversión)
         c_ss = (2.534 + 0.0887 * p_owf * 100)
-        # Costo de pérdidas (técnico)
         t_owf = 25
         c_ey = 100
         c_losses = (8760 * t_owf * c_ey * p_lossac) / 1e6
-        # Costo de transformadores (inversión)
         c_tr = (0.0427 * (S_rtr * 1e-6)**0.7513)
-        # Costo de reactores (inversión)
         fact = 1
         k_on = 0.01049 * fact
         k_mid = 0.01576 * fact
@@ -354,7 +345,6 @@ class MixedVariableProblem(ElementwiseProblem):
             c_r5 = 0
 
         c_reac = (c_r1 + c_r2 + c_r3 + c_r4 + c_r5) * 1
-
         penalty = 100
         c_react = 0
         if q_wslack[nbus-1] != 0:
@@ -366,7 +356,6 @@ class MixedVariableProblem(ElementwiseProblem):
                 c_vol += (V[i] - 1.1) * penalty
             elif V[i] < 0.9:
                 c_vol += (0.9 - V[i]) * penalty  
-
         i_max_tr = S_rtr / Sbase
         c_curr = 0
         if curr is not None and len(curr) > 0:
@@ -387,7 +376,7 @@ class MixedVariableProblem(ElementwiseProblem):
         return cost_invest, cost_tech, gs, g1_vol, cost_full
 
     # -------------------------------------------------------------------------
-    # Método _evaluate: Conecta los métodos anteriores y asigna F y G
+    # Método _evaluate: Conecta los métodos anteriores, usando potencia variable.
     # -------------------------------------------------------------------------
     def _evaluate(self, X, out, *args, **kwargs):
         (react1_bi, react2_bi, react3_bi, react4_bi, react5_bi,
@@ -405,9 +394,22 @@ class MixedVariableProblem(ElementwiseProblem):
         Sbase = 100e6
         f = 50
         l = 100
-        p_owf = 5
+
+        # Aquí, en lugar de usar una potencia fija p_owf=5, la calculamos a partir de Weibull.
+        # Se genera una distribución de velocidades y se convierte a potencia.
+        N = 10000
+        k = 2
+        lambda_ = 8
+        wind_speeds, wind_probs = generate_wind_speeds_weibull(N, k, lambda_, seed=42)
+        # Suponiendo que el parque tiene 36 turbinas (ajusta si es necesario)
+        n_turbines = 36
+        power_generated = wind_speed_to_power(wind_speeds, n_turbines=n_turbines)  # Potencia en Watts
+        avg_power_MW = np.mean(power_generated) / 1e6  # Potencia media en MW
+        # Convertir a p.u.: si 500 MW => 5 p.u., usamos: p_owf = (avg_power_MW) / 100
+        p_owf = avg_power_MW / 100.0
+        # Para la potencia reactiva, se puede asumir 0 o calcularla de forma similar
         q_owf = 0
-    
+
         (Y_bus, p_owf, q_owf, n_cables, u_i, I_rated, S_rtr,
          Y_l1, Y_l2, Y_l3, Y_l4, Y_l5, A, B, C, y_trserie, y_piserie, Y_ref
         ) = self.build_grid_data(Sbase, f, l, p_owf, q_owf, vol, S_rtr, n_cables,
@@ -426,16 +428,6 @@ class MixedVariableProblem(ElementwiseProblem):
             Y_l1, Y_l2, Y_l3, Y_l4, Y_l5, Y_ref, solution_found,
             Sbase, l, A, B, C
         )
-        
-        # Aplicamos una penalización en caso de que el costo técnico exceda el umbral deseado
-        umbral_tech = 2000.0  # Ajusta este valor según tus expectativas
-        if cost_tech > umbral_tech:
-             cost_invest = 1e9
-             cost_tech = 1e9
-    
         out["F"] = [cost_invest, cost_tech]
-        # (Si no deseas utilizar restricciones, puedes omitir "G" o dejarlo vacío)
-        # out["G"] = np.array([])
-
-    
-    
+        # Puedes definir restricciones adicionales si lo deseas:
+        # out["G"] = np.array(gs)
