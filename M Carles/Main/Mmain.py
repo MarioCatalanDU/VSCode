@@ -396,4 +396,27 @@ plt.show()
 
 
 
-1
+# Gráfics que nos muestran las distintas soluciones mediante optimización - Para validar el uso de NSGA
+
+plt.figure(figsize=(10,8))
+
+# NSGA-II Fixed (azul)
+plt.scatter(res.F[:, 0], res.F[:, 1], facecolors="none", edgecolors="blue", marker="o", s=50, label="NSGA-II Fixed")
+plt.scatter(res.F[I, 0], res.F[I, 1], color="blue", marker="o", s=80, label="Óptimo Fixed")
+
+# Método antiguo de Carles (magenta)
+plt.scatter(res_carles.F[:, 0], res_carles.F[:, 1], facecolors="none", edgecolors="magenta", marker="o", s=50, label="NSGA-II Fixed (Carles)")
+plt.scatter(res_carles.F[I_carles, 0], res_carles.F[I_carles, 1], color="magenta", marker="o", s=80, label="Óptimo Carles")
+
+plt.xlabel("Coste de Inversión [M€]", fontsize=14, labelpad=20)
+plt.ylabel("Coste Técnico [M€]", fontsize=14, labelpad=20)
+plt.title("Comparación soluciones NSGA-II\nPotencia Fija (azul) - Carles (magenta)", fontsize=16, fontweight="bold")
+# Ajustar ejes para incluir todos los datos
+all_x = np.concatenate([res.F[:, 0], res_var.F[:, 0], res_carles.F[:, 0]])
+all_y = np.concatenate([res.F[:, 1], res_var.F[:, 1], res_carles.F[:, 1]])
+plt.xlim(all_x.min() - 5, all_x.max() + 5)
+plt.ylim(all_y.min() - 50, all_y.max() + 50)
+
+plt.legend(fontsize=12)
+plt.grid(True, linestyle="--", alpha=0.7)
+plt.show()
