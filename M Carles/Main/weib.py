@@ -119,10 +119,10 @@ plt.figure(figsize=(10,6))
 sns.histplot(wind_speeds, bins=30, kde=True, color='royalblue', alpha=0.6, label='Distribución generada')
 plt.axvline(mean_wind_speed, color='red', linestyle='-.', label=f'Media: {mean_wind_speed:.2f} m/s')
 plt.axvline(median_wind_speed, color='green', linestyle='-.', label=f'Mediana: {median_wind_speed:.2f} m/s')
-plt.axvline(v_carles, color='purple', linestyle=':', label=f'Velocidad T.01: {v_carles:.2f} m/s')
+plt.axvline(v_carles, color='purple', linestyle=':', label=f'Velocidad Carles: {v_carles:.2f} m/s')
 plt.xlabel('Velocidad del viento [m/s]', fontsize=14)
 plt.ylabel('Densidad de probabilidad', fontsize=14)
-plt.title(f'Distribución Weibull de Velocidades - {season.capitalize()}', fontsize=16, fontweight='bold')
+plt.title(f'Distribución de Weibull - {season.capitalize()} en la Costa Mediterránea', fontsize=16, fontweight='bold')
 plt.legend(fontsize=12)
 plt.grid(True, linestyle='--', alpha=0.7)
 plt.show()
@@ -134,7 +134,7 @@ plt.show()
 # Se excluyen los valores 0 (de v < v_cut_in o v ≥ v_corte)
 # y se excluyen los valores que sean igual a la potencia nominal (500 MW), ya que no
 # tendría sentido mostrarlos en la distribución.
-mask = (power_generated_mw < P_rated_turbine)
+mask = (power_generated_mw > 0) & (power_generated_mw < P_rated_turbine)
 filtered_power = power_generated_mw[mask]
 
 plt.figure(figsize=(10,6))
@@ -143,10 +143,10 @@ plt.plot([], [], ' ', label=f'FP: {capacity_factor:.2f}%')
 plt.axvline(np.mean(filtered_power), color='red', linestyle='-.', label=f'Media: {np.mean(filtered_power):.2f} MW')
 plt.axvline(np.median(filtered_power), color='green', linestyle='-.', label=f'Mediana: {np.median(filtered_power):.2f} MW')
 # La línea de "Potencia Carles" en 500 MW se añade como referencia (aunque estos datos se filtran)
-plt.axvline(500, color='purple', linestyle=':', linewidth=2.5, label='Potencia T.01: 500.00 MW')
+plt.axvline(500, color='purple', linestyle=':', linewidth=2.5, label='Potencia Carles: 500.00 MW')
 plt.xlabel('Potencia generada [MW]', fontsize=14)
 plt.ylabel('Densidad de probabilidad', fontsize=14)
-plt.title(f'Distribución de Potencia Generada - {season.capitalize()}', fontsize=16, fontweight='bold')
+plt.title(f'Distribución de Potencia Generada - {season.capitalize()} en la Costa Mediterránea', fontsize=16, fontweight='bold')
 plt.legend(fontsize=12, frameon=True)
 plt.grid(True, linestyle='--', alpha=0.7)
 plt.xlim(0,510)  # Eje X de 0 a 600 MW
@@ -208,16 +208,16 @@ plt.plot(
 plt.axvline(mean_wind_speed, color='red', linestyle=':', linewidth=2, zorder=5,
             label=f'V.media: {mean_wind_speed:.2f} m/s')
 plt.axvline(v_carles, color='purple', linestyle=':', linewidth=2, zorder=5,
-            label=f'V.T.01: {v_carles:.2f} m/s')
-plt.axhline(mean_power_generated, color='green', linestyle='--', linewidth=1.5, zorder=5,
+            label=f'V.Carles: {v_carles:.2f} m/s')
+plt.axhline(mean_power_generated, color='red', linestyle='--', linewidth=1.5, zorder=5,
             label=f'P.media: {mean_power_generated:.2f} MW')
 plt.axhline(500, color='purple', linestyle='--', linewidth=1.5, zorder=5,
-            label='P.T.01: 500.00 MW')
+            label='P.Carles: 500.00 MW')
 
 # Configuración de ejes y título
 plt.xlabel('Velocidad del viento [m/s]', fontsize=14)
 plt.ylabel('Potencia generada [MW]', fontsize=14)
-plt.title('Potencia Generada vs Velocidad del Viento', fontsize=16, fontweight='bold')
+plt.title('Potencia Generada vs. Velocidad del Viento', fontsize=16, fontweight='bold')
 
 # Dejar un margen a la izquierda: el primer valor se dibuja a partir de 0, pero el eje X inicia en -0.5
 plt.xlim(-2, 28)

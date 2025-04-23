@@ -38,7 +38,7 @@ class MixedVariableProblem(ElementwiseProblem):
             "react5_bi": Binary(),                       # ""
             "vol_level": Choice(options=["vol220"]),     # "vol_level": Choice(options=["vol132","vol220"]) Escogemos el valor del voltaje
             "n_cables": Integer(bounds=(2, 3)),          # n_cables: Número de cables en paralelo. Solo puede tomar valores enteros entre 2 y 3
-            "S_rtr": Real(bounds=(500e6, 1000e6)),       # S_rtr: Potencia nominal del transformador, que puede variar entre 300 MW y 900 MW
+            "S_rtr": Real(bounds=(300e6, 9000e6)),       # S_rtr: Potencia nominal del transformador, que puede variar entre 300 MW y 900 MW
             "react1": Real(bounds=(0.0, 1.0)),           # Tamaños de los reactores, definidos como valores continuos entre 0.0 y 1.0
             "react2": Real(bounds=(0.0, 1.0)),           # ""
             "react3": Real(bounds=(0.0, 1.0)),           # "" 
