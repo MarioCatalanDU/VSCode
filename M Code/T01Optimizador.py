@@ -499,7 +499,7 @@ class MixedVariableProblem(ElementwiseProblem):
             # Cable cost 
              # (coste inversión)
             Sncab = np.sqrt(3) * u_i * I_rated
-            eur_sek = 0.087  # 0.087 eur = 1 sek
+            eur_sek = 0.09  # 0.087 eur = 1 sek
             c_cab = n_cables * (A + B * np.exp(C * Sncab / 1e8)) * l * eur_sek / 1e6
 
             # Cost switchgears
